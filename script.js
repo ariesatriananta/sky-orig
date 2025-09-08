@@ -297,7 +297,7 @@ function saveInlineEdit(cell, newValue) {
 
 function showAddCategoryModal() {
     document.getElementById('categoryModalTitle').textContent = 'Tambah Kategori Baru';
-    document.getElementById('categoryForm').reset();
+    document.getElementById('addCategoryForm').reset();
     document.getElementById('categoryId').value = '';
     document.getElementById('addCategoryModal').style.display = 'block';
 }
@@ -430,7 +430,7 @@ function updateCategoryDropdown() {
 
 function showAddItemModal() {
     document.getElementById('itemModalTitle').textContent = 'Tambah Barang Baru';
-    document.getElementById('itemForm').reset();
+    document.getElementById('addItemForm').reset();
     document.getElementById('itemId').value = '';
     
     // Reset pricing options
@@ -678,17 +678,19 @@ function updateItemDropdown() {
 
 function updatePricingOptions() {
     const itemSelect = document.getElementById('rentalItem');
-    const pricingSelect = document.getElementById('rentalPricing');
-    
+    const pricingSelect = document.getElementById('pricingOption');
+
+    if (!itemSelect || !pricingSelect) return;
+
     if (!itemSelect.value) {
         pricingSelect.innerHTML = '<option value="">Pilih Opsi Harga</option>';
         return;
     }
-    
+
     const selectedItem = items.find(i => i.id === parseInt(itemSelect.value));
     if (selectedItem && selectedItem.pricingOptions) {
         pricingSelect.innerHTML = '<option value="">Pilih Opsi Harga</option>';
-        
+
         selectedItem.pricingOptions.forEach((option, index) => {
             let typeName = '';
             switch(option.type) {
@@ -698,7 +700,7 @@ function updatePricingOptions() {
                 case 'monthly': typeName = 'Per Bulan'; break;
                 case 'custom': typeName = option.customName || 'Custom'; break;
             }
-            
+
             const optionElement = document.createElement('option');
             optionElement.value = index;
             optionElement.textContent = `${typeName} - Rp ${option.price.toLocaleString('id-ID')}`;
@@ -709,33 +711,48 @@ function updatePricingOptions() {
 
 function calculateRentalCost() {
     const itemSelect = document.getElementById('rentalItem');
-    const pricingSelect = document.getElementById('rentalPricing');
-    const duration = parseInt(document.getElementById('rentalDuration').value) || 1;
+    const pricingSelect = document.getElementById('pricingOption');
+    const duration = parseInt(document.getElementById('duration').value) || 1;
     const manualPrice = parseInt(document.getElementById('manualPrice').value);
-    
+
+    if (!itemSelect || !pricingSelect) return;
+
     if (!itemSelect.value || !pricingSelect.value) {
-        document.getElementById('totalCost').value = '';
+        const totalCostInput = document.getElementById('totalCost');
+        if (totalCostInput) totalCostInput.value = '';
         return;
     }
-    
+
     if (manualPrice && manualPrice > 0) {
-        document.getElementById('totalCost').value = manualPrice * duration;
+        const totalCostInput = document.getElementById('totalCost');
+        if (totalCostInput) totalCostInput.value = manualPrice * duration;
         return;
     }
-    
+
     const selectedItem = items.find(i => i.id === parseInt(itemSelect.value));
     const selectedPricing = selectedItem.pricingOptions[parseInt(pricingSelect.value)];
-    
+
     if (selectedPricing) {
         const totalCost = selectedPricing.price * duration;
-        document.getElementById('totalCost').value = totalCost;
+        const totalCostInput = document.getElementById('totalCost');
+        if (totalCostInput) totalCostInput.value = totalCost;
     }
 }
 
 function showAddRentalModal() {
-    document.getElementById('rentalModalTitle').textContent = 'Tambah Penyewaan Baru';
-    document.getElementById('rentalForm').reset();
-    document.getElementById('rentalId').value = '';
+    // Reset form
+    const form = document.getElementById('addRentalForm');
+    if (form) {
+        form.reset();
+    }
+
+    // Set default start date to today
+    const today = new Date().toISOString().split('T')[0];
+    const startDateInput = document.getElementById('startDate');
+    if (startDateInput) {
+        startDateInput.value = today;
+    }
+
     updateItemDropdown();
     document.getElementById('addRentalModal').style.display = 'block';
 }
@@ -743,28 +760,33 @@ function showAddRentalModal() {
 function editRental(id) {
     const rental = rentals.find(r => r.id === id);
     if (rental) {
-        document.getElementById('rentalModalTitle').textContent = 'Edit Penyewaan';
-        document.getElementById('rentalId').value = rental.id;
+        // Reset form first
+        const form = document.getElementById('addRentalForm');
+        if (form) {
+            form.reset();
+        }
+
+        // Fill form with rental data
         document.getElementById('customerName').value = rental.customerName;
         document.getElementById('customerPhone').value = rental.customerPhone;
         document.getElementById('rentalItem').value = rental.itemId;
-        document.getElementById('rentalStartDate').value = rental.startDate;
-        document.getElementById('rentalDuration').value = rental.duration;
+        document.getElementById('startDate').value = rental.startDate;
+        document.getElementById('duration').value = rental.duration;
         document.getElementById('totalCost').value = rental.totalCost;
-        
+
         updatePricingOptions();
         document.getElementById('addRentalModal').style.display = 'block';
     }
 }
 
 function saveRental() {
-    const rentalId = document.getElementById('rentalId').value;
+    const rentalId = ''; // For new rentals, this will be empty
     const customerName = document.getElementById('customerName').value;
     const customerPhone = document.getElementById('customerPhone').value;
     const itemId = parseInt(document.getElementById('rentalItem').value);
-    const pricingIndex = document.getElementById('rentalPricing').value;
-    const startDate = document.getElementById('rentalStartDate').value;
-    const duration = parseInt(document.getElementById('rentalDuration').value);
+    const pricingIndex = document.getElementById('pricingOption').value;
+    const startDate = document.getElementById('startDate').value;
+    const duration = parseInt(document.getElementById('duration').value);
     const totalCost = parseInt(document.getElementById('totalCost').value);
     const manualPrice = parseInt(document.getElementById('manualPrice').value);
     
@@ -1394,13 +1416,13 @@ window.onclick = function(event) {
 document.addEventListener('DOMContentLoaded', function() {
     // Add event listeners for rental form
     const rentalItem = document.getElementById('rentalItem');
-    const rentalPricing = document.getElementById('rentalPricing');
-    const rentalDuration = document.getElementById('rentalDuration');
+    const pricingOption = document.getElementById('pricingOption');
+    const duration = document.getElementById('duration');
     const manualPrice = document.getElementById('manualPrice');
-    
+
     if (rentalItem) rentalItem.addEventListener('change', updatePricingOptions);
-    if (rentalPricing) rentalPricing.addEventListener('change', calculateRentalCost);
-    if (rentalDuration) rentalDuration.addEventListener('input', calculateRentalCost);
+    if (pricingOption) pricingOption.addEventListener('change', calculateRentalCost);
+    if (duration) duration.addEventListener('input', calculateRentalCost);
     if (manualPrice) manualPrice.addEventListener('input', calculateRentalCost);
     
     // Add event listeners for return form

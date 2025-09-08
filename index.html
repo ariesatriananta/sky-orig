@@ -300,10 +300,11 @@
     <div id="addCategoryModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h3>Tambah Kategori Baru</h3>
+                <h3 id="categoryModalTitle">Tambah Kategori Baru</h3>
                 <span class="close" onclick="closeModal('addCategoryModal')">&times;</span>
             </div>
             <form id="addCategoryForm">
+                <input type="hidden" id="categoryId" value="">
                 <div class="form-row">
                     <div class="form-group">
                         <label for="categoryName">Nama Kategori</label>
@@ -339,11 +340,12 @@
     <!-- Add Item Modal -->
     <div id="addItemModal" class="modal">
         <div class="modal-content">
-            <div class="modal-header">
-                <h3>Tambah Barang Baru</h3>
-                <span class="close" onclick="closeModal('addItemModal')">&times;</span>
-            </div>
-            <form id="addItemForm">
+             <div class="modal-header">
+                 <h3 id="itemModalTitle">Tambah Barang Baru</h3>
+                 <span class="close" onclick="closeModal('addItemModal')">&times;</span>
+             </div>
+             <form id="addItemForm">
+                <input type="hidden" id="itemId" value="">
                 <div class="form-row">
                     <div class="form-group">
                         <label for="itemName">Nama Barang</label>
@@ -398,15 +400,15 @@
                                 </div>
                                 <div class="form-group">
                                     <label>Nama Custom (jika custom)</label>
-                                    <input type="text" class="pricing-custom-name" placeholder="Contoh: Per Event">
+                                    <input type="text" class="custom-name" placeholder="Contoh: Per 3 Hari">
                                 </div>
                                 <div class="form-group">
                                     <label>Harga</label>
                                     <input type="number" class="pricing-price" required>
                                 </div>
                                 <div class="form-group">
-                                    <button type="button" class="btn-remove" onclick="removePricingOption(this)">
-                                        <i class="fas fa-trash"></i>
+                                    <button type="button" class="btn-remove-pricing" onclick="removePricingOption(this)" style="display: none;">
+                                        Hapus
                                     </button>
                                 </div>
                             </div>
