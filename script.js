@@ -227,23 +227,78 @@ function showSection(sectionId, event) {
 
 // Dashboard functions
 function loadDashboard() {
+    // Hitung total pendapatan, penyewaan aktif, barang tersedia, dan total kategori
     const totalRevenue = returns.reduce((sum, ret) => sum + (ret.finalCost || 0), 0);
     const activeRentals = rentals.filter(r => r.status === 'active').length;
     const availableItems = items.filter(i => i.status === 'available').length;
     const totalCategories = categories.length;
-    
+
     document.getElementById('totalRevenue').textContent = `Rp ${totalRevenue.toLocaleString('id-ID')}`;
     document.getElementById('activeRentals').textContent = activeRentals;
     document.getElementById('availableItems').textContent = availableItems;
     document.getElementById('totalCategories').textContent = totalCategories;
-    
-    const warehouseItems = items.filter(i => i.status === 'available').length;
-    const rentedItems = items.filter(i => i.status === 'rented').length;
-    const totalProfit = returns.reduce((sum, ret) => sum + (ret.finalCost || 0), 0);
-    
-    document.getElementById('warehouseItems').textContent = warehouseItems;
-    document.getElementById('rentedItems').textContent = rentedItems;
-    document.getElementById('totalProfit').textContent = `Rp ${totalProfit.toLocaleString('id-ID')}`;
+
+    // Hitung jumlah penyewaan per item
+    const rentalCounts = {};
+    rentals.forEach(rental => {
+        if (rental.itemId) {
+            rentalCounts[rental.itemId] = (rentalCounts[rental.itemId] || 0) + 1;
+        }
+    });
+
+    // Buat array item dengan jumlah penyewaan dan total pendapatan
+    const itemsWithCounts = items.map(item => {
+        // Hitung total pendapatan untuk item ini dari data returns
+        const totalRevenueForItem = returns
+            .filter(ret => {
+                const rental = rentals.find(r => r.id === ret.rentalId);
+                return rental && rental.itemId === item.id;
+            })
+            .reduce((sum, ret) => sum + (ret.finalCost || 0), 0);
+
+        return {
+            id: item.id,
+            name: item.name,
+            rentalCount: rentalCounts[item.id] || 0,
+            totalRevenue: totalRevenueForItem
+        };
+    });
+
+    // Urutkan berdasarkan rentalCount menurun dan ambil 5 teratas
+    const top5Items = itemsWithCounts.sort((a, b) => b.rentalCount - a.rentalCount).slice(0, 5);
+
+    // Render daftar top 5 item dengan kolom tambahan total pendapatan
+    const topRentedList = document.getElementById('topRentedList');
+    if (topRentedList) {
+        if (top5Items.length === 0) {
+            topRentedList.innerHTML = '<p>Tidak ada data penyewaan.</p>';
+        } else {
+            topRentedList.innerHTML = `
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>No</th>
+                                <th>Nama Barang</th>
+                                <th>Jumlah Penyewaan</th>
+                                <th>Total Pendapatan</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${top5Items.map((item, index) => `
+                                <tr>
+                                    <td>${index + 1}</td>
+                                    <td>${item.name}</td>
+                                    <td>${item.rentalCount} kali disewa</td>
+                                    <td>Rp ${item.totalRevenue.toLocaleString('id-ID')}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        }
+    }
 }
 
 // Make dashboard stats clickable
@@ -498,12 +553,11 @@ function loadItems(sortKey = null, sortOrder = 'asc') {
 
         const row = document.createElement('tr');
         row.innerHTML = `
-            <td>${item.id}</td>
             <td>${imageHtml}</td>
             <td>${item.name}</td>
             <td>${item.code}</td>
             <td>${categoryName}</td>
-            <td>${item.condition}</td>
+            <td>${item.condition === 'Rusak' ? '<span style="color: red; font-weight: bold;">Rusak</span>' : item.condition}</td>
             <td>${pricingDisplay}</td>
             <td>${item.location}</td>
             <td><span class="status-badge status-${item.status}">${translateStatus(item.status)}</span></td>
@@ -758,7 +812,7 @@ async function saveItem() {
     const itemName = document.getElementById('itemName').value;
     const itemCode = document.getElementById('itemCode').value;
     const itemCategory = document.getElementById('itemCategory').value;
-    const itemCondition = document.getElementById('itemCondition').value;
+    let itemCondition = document.getElementById('itemCondition').value;
     const itemLocation = document.getElementById('itemLocation').value;
     const itemImageInput = document.getElementById('itemImage');
 
@@ -766,6 +820,7 @@ async function saveItem() {
         showNotification('Semua field harus diisi!', 'error');
         return;
     }
+
 
     // Collect pricing options
     const pricingOptions = [];
