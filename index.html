@@ -189,7 +189,7 @@
                 <table class="data-table">
                     <thead>
                         <tr>
-                            <th>Icon</th>
+                            <th>ID</th>
                             <th>Nama</th>
                             <th>Kode</th>
                             <th>Kategori</th>
@@ -225,9 +225,10 @@
                             <th>Pelanggan</th>
                             <th>Telepon</th>
                             <th>Barang</th>
+                            <th>Jenis Sewa</th>
+                            <th>Total Biaya</th>
                             <th>Tanggal Mulai</th>
                             <th>Durasi</th>
-                            <th>Total Biaya</th>
                             <th>Status</th>
                             <th>Aksi</th>
                         </tr>
@@ -472,11 +473,11 @@
                 </div>
                 <div class="form-row">
                     <div class="form-group">
-                        <label for="totalCost">Total Biaya (Rp)</label>
-                    <div class="form-group">
                         <label for="manualPrice">Harga Manual (Opsional)</label>
                         <input type="number" id="manualPrice" placeholder="Kosongkan jika menggunakan harga otomatis" oninput="calculateRentalCost()">
                     </div>
+                    <div class="form-group">
+                        <label for="totalCost">Total Biaya (Rp)</label>
                         <input type="number" id="totalCost" readonly>
                     </div>
                     <div class="form-group">
@@ -503,7 +504,7 @@
                 <div class="form-row">
                     <div class="form-group">
                         <label for="returnRental">Pilih Penyewaan Aktif</label>
-                        <select id="returnRental" required>
+                        <select id="returnRental" required onchange="updateReturnDetails()">
                             <option value="">Pilih Penyewaan</option>
                         </select>
                     </div>
@@ -523,8 +524,6 @@
                         </select>
                     </div>
                     <div class="form-group">
-                        <label for="discount">Diskon (%)</label>
-                    <div class="form-group">
                         <label for="returnPenalty">Denda Manual (Rp)</label>
                         <input type="number" id="returnPenalty" value="0" oninput="calculateFinalCost()">
                     </div>
@@ -532,7 +531,9 @@
                         <label for="penaltyReason">Alasan Denda</label>
                         <textarea id="penaltyReason" placeholder="Masukkan alasan jika ada denda"></textarea>
                     </div>
-                        <input type="number" id="discount" min="0" max="100" value="0">
+                    <div class="form-group">
+                        <label for="discount">Diskon (%)</label>
+                        <input type="number" id="discount" min="0" max="100" value="0" oninput="calculateFinalCost()">
                     </div>
                 </div>
                 <div class="form-group">

@@ -21,14 +21,18 @@ function performAutoLogin() {
 // Global variables
 let currentUser = null;
 let items = JSON.parse(localStorage.getItem('rentalItems')) || [];
-let categories = JSON.parse(localStorage.getItem('rentalCategories')) || [
-    { id: 1, name: 'Elektronik', icon: '💻', description: 'Perangkat elektronik' },
-    { id: 2, name: 'Furniture', icon: '🪑', description: 'Perabotan rumah' },
-    { id: 3, name: 'Alat', icon: '🔧', description: 'Alat kerja dan konstruksi' },
-    { id: 4, name: 'Kendaraan', icon: '🚗', description: 'Kendaraan bermotor' }
-];
+let categories = JSON.parse(localStorage.getItem('rentalCategories')) || [];
 let rentals = JSON.parse(localStorage.getItem('rentalData')) || [];
 let returns = JSON.parse(localStorage.getItem('returnData')) || [];
+
+function loadAllData() {
+    loadDashboard();
+    loadCategories();
+    loadItems();
+    loadRentals();
+    loadReturns();
+    updateCharts();
+}
 
 document.addEventListener('DOMContentLoaded', function() {
     // Check for auto-login
@@ -36,23 +40,57 @@ document.addEventListener('DOMContentLoaded', function() {
         setTimeout(() => {
             document.getElementById("loginScreen").style.display = "none";
             document.getElementById("mainApp").style.display = "block";
-            loadDashboard();
-            loadCategories();
-            loadItems();
-            loadRentals();
-            loadReturns();
-            updateCharts();
+            loadAllData();
+            // Load last active section or default to dashboard
+            const activeSection = localStorage.getItem('activeSection') || 'dashboard';
+            showSection(activeSection);
         }, 100);
         return;
     }
 
     checkAuth();
-    loadDashboard();
-    loadCategories();
-    loadItems();
-    loadRentals();
-    loadReturns();
-    updateCharts();
+    loadAllData();
+    // Load last active section or default to dashboard
+    const activeSection = localStorage.getItem('activeSection') || 'dashboard';
+    showSection(activeSection);
+
+    // Add event listeners for forms
+    const addCategoryForm = document.getElementById('addCategoryForm');
+    if (addCategoryForm) {
+        addCategoryForm.addEventListener('submit', function(event) {
+            event.preventDefault();
+            saveCategory();
+        });
+    }
+
+    const addItemForm = document.getElementById('addItemForm');
+    if (addItemForm) {
+        addItemForm.addEventListener('submit', function(event) {
+            event.preventDefault();
+            saveItem();
+        });
+    }
+
+    const addRentalForm = document.getElementById('addRentalForm');
+    if (addRentalForm) {
+        addRentalForm.addEventListener('submit', function(event) {
+            event.preventDefault();
+            saveRental();
+        });
+    }
+
+    const addReturnForm = document.getElementById('addReturnForm');
+    if (addReturnForm) {
+        addReturnForm.addEventListener('submit', function(event) {
+            event.preventDefault();
+            saveReturn();
+        });
+        // Add event listeners for discount and penalty inputs to update final cost
+        const discountInput = document.getElementById('discount');
+        const penaltyInput = document.getElementById('returnPenalty');
+        if (discountInput) discountInput.addEventListener('input', calculateFinalCost);
+        if (penaltyInput) penaltyInput.addEventListener('input', calculateFinalCost);
+    }
 });
 
 // Authentication functions
@@ -60,23 +98,27 @@ function checkAuth() {
     const urlParams = new URLSearchParams(window.location.search);
     const username = urlParams.get("username");
     const password = urlParams.get("password");
-    
+
     if (username === "admin" && password === "admin123") {
         currentUser = { username: "admin", role: "admin" };
         localStorage.setItem("currentUser", JSON.stringify(currentUser));
         document.getElementById("loginScreen").style.display = "none";
         document.getElementById("mainApp").style.display = "block";
-        loadDashboard();
+        loadAllData();
+        const activeSection = localStorage.getItem('activeSection') || 'dashboard';
+        showSection(activeSection);
         return;
     }
-    
+
     currentUser = JSON.parse(localStorage.getItem("currentUser"));
     if (!currentUser) {
         showLogin();
     } else {
         document.getElementById("loginScreen").style.display = "none";
         document.getElementById("mainApp").style.display = "block";
-        loadDashboard();
+        loadAllData();
+        const activeSection = localStorage.getItem('activeSection') || 'dashboard';
+        showSection(activeSection);
     }
 }
 
@@ -88,13 +130,15 @@ function showLogin() {
 function login() {
     const username = document.getElementById('username').value;
     const password = document.getElementById('password').value;
-    
+
     if (username === 'admin' && password === 'admin123') {
         currentUser = { username: 'admin', role: 'admin' };
         localStorage.setItem('currentUser', JSON.stringify(currentUser));
         document.getElementById('loginScreen').style.display = 'none';
         document.getElementById('mainApp').style.display = 'block';
-        loadDashboard();
+        loadAllData();
+        const activeSection = localStorage.getItem('activeSection') || 'dashboard';
+        showSection(activeSection);
     } else {
         showNotification('Username atau password salah!', 'error');
     }
@@ -108,6 +152,9 @@ function logout() {
 
 // Navigation functions
 function showSection(sectionId, event) {
+    // Save current section to localStorage
+    localStorage.setItem('activeSection', sectionId);
+
     const sections = document.querySelectorAll('.section');
     sections.forEach(section => section.style.display = 'none');
 
@@ -135,8 +182,10 @@ function showSection(sectionId, event) {
         sectionElement.style.display = 'block';
     }
 
-    if (event) {
-        event.target.closest('.nav-item').classList.add('active');
+    // Add active class to the correct nav item
+    const navItem = document.querySelector(`.nav-item[onclick*="${sectionId}"]`);
+    if (navItem) {
+        navItem.classList.add('active');
     }
 
     // Load section-specific data
@@ -235,12 +284,16 @@ function loadCategories() {
     tbody.innerHTML = '';
     
     categories.forEach(category => {
+        // Hitung jumlah barang dalam kategori ini
+        const itemCount = items.filter(item => item.categoryId === category.id).length;
+        category.itemCount = itemCount;
+
         const row = document.createElement('tr');
         row.innerHTML = `
-            <td>${category.id}</td>
             <td>${category.icon}</td>
             <td class="editable-name" data-id="${category.id}">${category.name}</td>
             <td class="editable-desc" data-id="${category.id}">${category.description}</td>
+            <td>${category.itemCount}</td>
             <td>
                 <button class="btn-edit" onclick="editCategory(${category.id})">Edit</button>
                 <button class="btn-delete" onclick="deleteCategory(${category.id})">Hapus</button>
@@ -316,9 +369,9 @@ function editCategory(id) {
 
 function saveCategory() {
     const categoryId = document.getElementById('categoryId').value;
-    const categoryName = document.getElementById('categoryName').value;
+    const categoryName = document.getElementById('categoryName').value.trim();
     const categoryIcon = document.getElementById('categoryIcon').value;
-    const categoryDescription = document.getElementById('categoryDescription').value;
+    const categoryDescription = document.getElementById('categoryDescription').value.trim();
     
     if (!categoryName || !categoryIcon) {
         showNotification('Nama kategori dan icon harus diisi!', 'error');
@@ -328,10 +381,15 @@ function saveCategory() {
     if (categoryId) {
         // Edit existing category
         const category = categories.find(c => c.id === parseInt(categoryId));
-        category.name = categoryName;
-        category.icon = categoryIcon;
-        category.description = categoryDescription;
-        showNotification('Kategori berhasil diperbarui!', 'success');
+        if (category) {
+            category.name = categoryName;
+            category.icon = categoryIcon;
+            category.description = categoryDescription;
+            showNotification('Kategori berhasil diperbarui!', 'success');
+        } else {
+            showNotification('Kategori tidak ditemukan!', 'error');
+            return;
+        }
     } else {
         // Add new category
         const newCategory = {
@@ -920,92 +978,130 @@ function updateActiveRentalsDropdown() {
 
 function updateReturnDetails() {
     const rentalSelect = document.getElementById('returnRental');
+    if (!rentalSelect) return;
     const selectedRental = rentals.find(r => r.id === parseInt(rentalSelect.value));
     
+    const returnCustomerName = document.getElementById('returnCustomerName');
+    const returnItemName = document.getElementById('returnItemName');
+    const returnOriginalCost = document.getElementById('returnOriginalCost');
+    const finalCostInput = document.getElementById('finalCost');
+
     if (selectedRental) {
-        document.getElementById('returnCustomerName').textContent = selectedRental.customerName;
-        document.getElementById('returnItemName').textContent = selectedRental.itemName;
-        document.getElementById('returnOriginalCost').textContent = `Rp ${selectedRental.totalCost.toLocaleString('id-ID')}`;
+        if (returnCustomerName) returnCustomerName.textContent = selectedRental.customerName;
+        if (returnItemName) returnItemName.textContent = selectedRental.itemName;
+        if (returnOriginalCost) returnOriginalCost.textContent = `Rp ${selectedRental.totalCost.toLocaleString('id-ID')}`;
         calculateFinalCost();
     } else {
-        document.getElementById('returnCustomerName').textContent = '-';
-        document.getElementById('returnItemName').textContent = '-';
-        document.getElementById('returnOriginalCost').textContent = '-';
-        document.getElementById('finalCost').value = '';
+        if (returnCustomerName) returnCustomerName.textContent = '-';
+        if (returnItemName) returnItemName.textContent = '-';
+        if (returnOriginalCost) returnOriginalCost.textContent = '-';
+        if (finalCostInput) finalCostInput.value = '';
     }
 }
 
 function calculateFinalCost() {
     const rentalSelect = document.getElementById('returnRental');
-    const discount = parseInt(document.getElementById('returnDiscount').value) || 0;
-    const penalty = parseInt(document.getElementById('returnPenalty').value) || 0;
-    
+    const discountInput = document.getElementById('discount');
+    const penaltyInput = document.getElementById('returnPenalty');
+
+    if (!rentalSelect || !discountInput || !penaltyInput) return;
+
+    const discount = parseInt(discountInput.value) || 0;
+    const penalty = parseInt(penaltyInput.value) || 0;
+
     const selectedRental = rentals.find(r => r.id === parseInt(rentalSelect.value));
     if (selectedRental) {
         const originalCost = selectedRental.totalCost;
         const discountAmount = (originalCost * discount) / 100;
         const finalCost = originalCost - discountAmount + penalty;
-        document.getElementById('finalCost').value = Math.max(0, finalCost);
+        const finalCostInput = document.getElementById('finalCost');
+        if (finalCostInput) {
+            finalCostInput.value = Math.max(0, finalCost);
+        }
     }
 }
 
 function showAddReturnModal() {
-    document.getElementById('returnModalTitle').textContent = 'Proses Pengembalian';
-    document.getElementById('returnForm').reset();
-    document.getElementById('returnId').value = '';
-    
+    const modalTitle = document.getElementById('returnModalTitle');
+    if (modalTitle) {
+        modalTitle.textContent = 'Proses Pengembalian';
+    }
+    const addReturnForm = document.getElementById('addReturnForm');
+    if (addReturnForm) {
+        addReturnForm.reset();
+    }
+    const returnId = document.getElementById('returnId');
+    if (returnId) {
+        returnId.value = '';
+    }
+
     // Set default return date to today
     const today = new Date().toISOString().split('T')[0];
-    document.getElementById('returnDate').value = today;
-    
+    const returnDate = document.getElementById('returnDate');
+    if (returnDate) {
+        returnDate.value = today;
+    }
+
     updateActiveRentalsDropdown();
-    document.getElementById('addReturnModal').style.display = 'block';
+    const addReturnModal = document.getElementById('addReturnModal');
+    if (addReturnModal) {
+        addReturnModal.style.display = 'block';
+    }
 }
 
 function editReturn(rentalId) {
     const returnItem = returns.find(r => r.rentalId === rentalId);
     if (returnItem) {
         document.getElementById('returnModalTitle').textContent = 'Edit Pengembalian';
+        document.getElementById('addReturnForm').reset();
         document.getElementById('returnId').value = returnItem.rentalId;
         document.getElementById('returnRental').value = returnItem.rentalId;
         document.getElementById('returnDate').value = returnItem.returnDate;
         document.getElementById('returnCondition').value = returnItem.condition;
-        document.getElementById('returnDiscount').value = returnItem.discount;
+        document.getElementById('discount').value = returnItem.discount;
         document.getElementById('returnPenalty').value = returnItem.penalty || 0;
         document.getElementById('penaltyReason').value = returnItem.penaltyReason || '';
         document.getElementById('finalCost').value = returnItem.finalCost;
-        
+
         updateReturnDetails();
         document.getElementById('addReturnModal').style.display = 'block';
     }
 }
 
 function saveReturn() {
-    const returnId = document.getElementById('returnId').value;
-    const rentalId = parseInt(document.getElementById('returnRental').value);
-    const returnDate = document.getElementById('returnDate').value;
-    const condition = document.getElementById('returnCondition').value;
-    const discount = parseInt(document.getElementById('returnDiscount').value) || 0;
-    const penalty = parseInt(document.getElementById('returnPenalty').value) || 0;
-    const penaltyReason = document.getElementById('penaltyReason').value;
-    const finalCost = parseInt(document.getElementById('finalCost').value);
-    
+    const returnIdElem = document.getElementById('returnId');
+    const returnId = returnIdElem ? returnIdElem.value : null;
+    const rentalIdElem = document.getElementById('returnRental');
+    const rentalId = rentalIdElem ? parseInt(rentalIdElem.value) : null;
+    const returnDateElem = document.getElementById('returnDate');
+    const returnDate = returnDateElem ? returnDateElem.value : null;
+    const conditionElem = document.getElementById('returnCondition');
+    const condition = conditionElem ? conditionElem.value : null;
+    const discountElem = document.getElementById('discount');
+    const discount = discountElem ? parseInt(discountElem.value) || 0 : 0;
+    const penaltyElem = document.getElementById('returnPenalty');
+    const penalty = penaltyElem ? parseInt(penaltyElem.value) || 0 : 0;
+    const penaltyReasonElem = document.getElementById('penaltyReason');
+    const penaltyReason = penaltyReasonElem ? penaltyReasonElem.value : '';
+    const finalCostElem = document.getElementById('finalCost');
+    const finalCost = finalCostElem ? parseInt(finalCostElem.value) : 0;
+
     if (!rentalId || !returnDate || !condition) {
         showNotification('Semua field harus diisi!', 'error');
         return;
     }
-    
+
     if (penalty > 0 && !penaltyReason.trim()) {
         showNotification('Alasan denda harus diisi jika ada denda!', 'error');
         return;
     }
-    
+
     const rental = rentals.find(r => r.id === rentalId);
     if (!rental) {
         showNotification('Penyewaan tidak ditemukan!', 'error');
         return;
     }
-    
+
     if (returnId) {
         // Edit existing return
         const returnItem = returns.find(r => r.rentalId === parseInt(returnId));
@@ -1030,28 +1126,28 @@ function saveReturn() {
             finalCost
         };
         returns.push(newReturn);
-        
+
         // Update rental status
         rental.status = 'returned';
-        
+
         // Update item status and condition
         const item = items.find(i => i.id === rental.itemId);
         if (item) {
             item.status = 'available';
             item.condition = condition;
         }
-        
+
         localStorage.setItem('rentalData', JSON.stringify(rentals));
         localStorage.setItem('rentalItems', JSON.stringify(items));
-        
+
         showNotification('Pengembalian berhasil diproses!', 'success');
-        
+
         // Show return invoice/receipt automatically
         setTimeout(() => {
             showReturnInvoice(rental.id);
         }, 500);
     }
-    
+
     localStorage.setItem('returnData', JSON.stringify(returns));
     loadReturns();
     loadRentals();
