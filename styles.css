@@ -13,10 +13,11 @@ body {
 
 /* Login Screen */
 .login-container {
-    display: flex;
-    justify-content: center;
-    align-items: center;
+    /* Center the login box perfectly */
+    display: grid;
+    place-items: center;
     min-height: 100vh;
+    width: 100%;
     padding: 20px;
 }
 
@@ -28,6 +29,7 @@ body {
     width: 100%;
     max-width: 400px;
     text-align: center;
+    margin: 0 auto; /* safety in case grid not applied */
 }
 
 .login-header {
