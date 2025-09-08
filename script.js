@@ -71,6 +71,26 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    // Preview image when selecting a file on Add/Edit Item form
+    const itemImageInput = document.getElementById('itemImage');
+    const itemImagePreview = document.getElementById('itemImagePreview');
+    if (itemImageInput && itemImagePreview) {
+        itemImageInput.addEventListener('change', function() {
+            const file = itemImageInput.files && itemImageInput.files[0];
+            if (!file) {
+                itemImagePreview.src = '';
+                itemImagePreview.style.display = 'none';
+                return;
+            }
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                itemImagePreview.src = e.target.result;
+                itemImagePreview.style.display = 'block';
+            };
+            reader.readAsDataURL(file);
+        });
+    }
+
     const addRentalForm = document.getElementById('addRentalForm');
     if (addRentalForm) {
         addRentalForm.addEventListener('submit', function(event) {
@@ -425,14 +445,37 @@ function deleteCategory(id) {
 }
 
 // Item functions
-function loadItems() {
+function loadItems(sortKey = null, sortOrder = 'asc') {
     const tbody = document.getElementById('itemsTableBody');
     tbody.innerHTML = '';
-    
-    items.forEach(item => {
+
+    let sortedItems = [...items];
+    if (sortKey) {
+        sortedItems.sort((a, b) => {
+            let valA = a[sortKey];
+            let valB = b[sortKey];
+
+            // For category, compare category names
+            if (sortKey === 'categoryName') {
+                const catA = categories.find(c => c.id === a.categoryId);
+                const catB = categories.find(c => c.id === b.categoryId);
+                valA = catA ? catA.name : '';
+                valB = catB ? catB.name : '';
+            }
+
+            if (typeof valA === 'string') valA = valA.toLowerCase();
+            if (typeof valB === 'string') valB = valB.toLowerCase();
+
+            if (valA < valB) return sortOrder === 'asc' ? -1 : 1;
+            if (valA > valB) return sortOrder === 'asc' ? 1 : -1;
+            return 0;
+        });
+    }
+
+    sortedItems.forEach(item => {
         const category = categories.find(c => c.id === item.categoryId);
         const categoryName = category ? category.name : 'Tidak diketahui';
-        
+
         // Display pricing options
         let pricingDisplay = '';
         if (item.pricingOptions && item.pricingOptions.length > 0) {
@@ -450,17 +493,20 @@ function loadItems() {
         } else {
             pricingDisplay = 'Belum ada opsi harga';
         }
-        
+
+        const imageHtml = item.image ? `<img src="${item.image}" alt="Gambar Barang" style="max-width: 50px; max-height: 50px; border-radius: 4px;">` : '';
+
         const row = document.createElement('tr');
         row.innerHTML = `
             <td>${item.id}</td>
+            <td>${imageHtml}</td>
             <td>${item.name}</td>
             <td>${item.code}</td>
             <td>${categoryName}</td>
             <td>${item.condition}</td>
             <td>${pricingDisplay}</td>
             <td>${item.location}</td>
-            <td><span class="status-badge status-${item.status}">${item.status}</span></td>
+            <td><span class="status-badge status-${item.status}">${translateStatus(item.status)}</span></td>
             <td>
                 <button class="btn-edit" onclick="editItem(${item.id})">Edit</button>
                 <button class="btn-delete" onclick="deleteItem(${item.id})">Hapus</button>
@@ -468,9 +514,93 @@ function loadItems() {
         `;
         tbody.appendChild(row);
     });
-    
+
     // Update category dropdown in item form
     updateCategoryDropdown();
+}
+
+// Sorting state for items
+let currentSortKey = null;
+let currentSortOrder = 'asc';
+
+// Sorting state for rentals
+let currentRentalSortKey = null;
+let currentRentalSortOrder = 'asc';
+
+function toggleSort(key) {
+    if (currentSortKey === key) {
+        currentSortOrder = currentSortOrder === 'asc' ? 'desc' : 'asc';
+    } else {
+        currentSortKey = key;
+        currentSortOrder = 'asc';
+    }
+    updateSortIcons();
+    loadItems(currentSortKey, currentSortOrder);
+}
+
+function toggleRentalSort(key) {
+    if (currentRentalSortKey === key) {
+        currentRentalSortOrder = currentRentalSortOrder === 'asc' ? 'desc' : 'asc';
+    } else {
+        currentRentalSortKey = key;
+        currentRentalSortOrder = 'asc';
+    }
+    updateRentalSortIcons();
+    loadRentals(currentRentalSortKey, currentRentalSortOrder);
+}
+
+function updateSortIcons() {
+    const headerRow = document.querySelector('#itemsTableBody').closest('table').querySelector('thead tr');
+    if (!headerRow) return;
+    const ths = headerRow.querySelectorAll('th');
+
+    ths.forEach(th => {
+        // Remove existing sort icons
+        const icon = th.querySelector('.sort-icon');
+        if (icon) {
+            th.removeChild(icon);
+        }
+    });
+
+    ths.forEach(th => {
+        const key = th.getAttribute('onclick')?.match(/toggleSort\('(.+)'\)/)?.[1];
+        if (key === currentSortKey) {
+            const icon = document.createElement('span');
+            icon.classList.add('sort-icon');
+            icon.style.marginLeft = '5px';
+            icon.style.fontSize = '0.7em';
+            icon.style.userSelect = 'none';
+            icon.innerHTML = currentSortOrder === 'asc' ? '&#9650;' : '&#9660;'; // up or down arrow
+            th.appendChild(icon);
+        }
+    });
+}
+
+function updateRentalSortIcons() {
+    const headerRow = document.querySelector('#rentalsTableBody').closest('table').querySelector('thead tr');
+    if (!headerRow) return;
+    const ths = headerRow.querySelectorAll('th');
+
+    ths.forEach(th => {
+        // Remove existing sort icons
+        const icon = th.querySelector('.sort-icon');
+        if (icon) {
+            th.removeChild(icon);
+        }
+    });
+
+    ths.forEach(th => {
+        const key = th.getAttribute('onclick')?.match(/toggleRentalSort\('(.+)'\)/)?.[1];
+        if (key === currentRentalSortKey) {
+            const icon = document.createElement('span');
+            icon.classList.add('sort-icon');
+            icon.style.marginLeft = '5px';
+            icon.style.fontSize = '0.7em';
+            icon.style.userSelect = 'none';
+            icon.innerHTML = currentRentalSortOrder === 'asc' ? '&#9650;' : '&#9660;'; // up or down arrow
+            th.appendChild(icon);
+        }
+    });
 }
 
 function updateCategoryDropdown() {
@@ -522,6 +652,11 @@ function showAddItemModal() {
     `;
     
     updateCategoryDropdown();
+    // Reset image input and preview
+    const imgInput = document.getElementById('itemImage');
+    if (imgInput) imgInput.value = '';
+    const preview = document.getElementById('itemImagePreview');
+    if (preview) { preview.src = ''; preview.style.display = 'none'; }
     document.getElementById('addItemModal').style.display = 'block';
 }
 
@@ -535,11 +670,11 @@ function editItem(id) {
         document.getElementById('itemCategory').value = item.categoryId;
         document.getElementById('itemCondition').value = item.condition;
         document.getElementById('itemLocation').value = item.location;
-        
+
         // Load pricing options
         const pricingContainer = document.getElementById('pricingOptions');
         pricingContainer.innerHTML = '';
-        
+
         if (item.pricingOptions && item.pricingOptions.length > 0) {
             item.pricingOptions.forEach((option, index) => {
                 addPricingOption(option, index === 0);
@@ -547,7 +682,23 @@ function editItem(id) {
         } else {
             addPricingOption(null, true);
         }
-        
+
+        // Load image preview if available
+        const preview = document.getElementById('itemImagePreview');
+        if (item.image) {
+            preview.src = item.image;
+            preview.style.display = 'block';
+        } else {
+            preview.src = '';
+            preview.style.display = 'none';
+        }
+
+        // Clear file input value (cannot set file input value programmatically for security)
+        const itemImageInput = document.getElementById('itemImage');
+        if (itemImageInput) {
+            itemImageInput.value = '';
+        }
+
         document.getElementById('addItemModal').style.display = 'block';
     }
 }
@@ -602,28 +753,29 @@ function toggleCustomName(select) {
     }
 }
 
-function saveItem() {
+async function saveItem() {
     const itemId = document.getElementById('itemId').value;
     const itemName = document.getElementById('itemName').value;
     const itemCode = document.getElementById('itemCode').value;
     const itemCategory = document.getElementById('itemCategory').value;
     const itemCondition = document.getElementById('itemCondition').value;
     const itemLocation = document.getElementById('itemLocation').value;
-    
+    const itemImageInput = document.getElementById('itemImage');
+
     if (!itemName || !itemCode || !itemCategory || !itemCondition || !itemLocation) {
         showNotification('Semua field harus diisi!', 'error');
         return;
     }
-    
+
     // Collect pricing options
     const pricingOptions = [];
     const pricingElements = document.querySelectorAll('.pricing-option');
-    
+
     pricingElements.forEach(element => {
         const type = element.querySelector('.pricing-type').value;
         const price = parseInt(element.querySelector('.pricing-price').value);
         const customName = element.querySelector('.custom-name').value;
-        
+
         if (price && price > 0) {
             const option = { type, price };
             if (type === 'custom' && customName) {
@@ -632,12 +784,18 @@ function saveItem() {
             pricingOptions.push(option);
         }
     });
-    
+
     if (pricingOptions.length === 0) {
         showNotification('Minimal harus ada satu opsi harga!', 'error');
         return;
     }
-    
+
+    // Read image file as base64 if selected
+    let imageBase64 = null;
+    if (itemImageInput && itemImageInput.files && itemImageInput.files[0]) {
+        imageBase64 = await readFileAsDataURL(itemImageInput.files[0]);
+    }
+
     if (itemId) {
         // Edit existing item
         const item = items.find(i => i.id === parseInt(itemId));
@@ -647,6 +805,9 @@ function saveItem() {
         item.condition = itemCondition;
         item.location = itemLocation;
         item.pricingOptions = pricingOptions;
+        if (imageBase64 !== null) {
+            item.image = imageBase64;
+        }
         showNotification('Barang berhasil diperbarui!', 'success');
     } else {
         // Add new item
@@ -658,16 +819,27 @@ function saveItem() {
             condition: itemCondition,
             location: itemLocation,
             status: 'available',
-            pricingOptions: pricingOptions
+            pricingOptions: pricingOptions,
+            image: imageBase64
         };
         items.push(newItem);
         showNotification('Barang berhasil ditambahkan!', 'success');
     }
-    
+
     localStorage.setItem('rentalItems', JSON.stringify(items));
     loadItems();
     loadDashboard();
     closeModal('addItemModal');
+}
+
+// Helper function to read file as DataURL (base64)
+function readFileAsDataURL(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = e => resolve(e.target.result);
+        reader.onerror = e => reject(e);
+        reader.readAsDataURL(file);
+    });
 }
 
 function deleteItem(id) {
@@ -687,15 +859,53 @@ function deleteItem(id) {
     }
 }
 
+function translateStatus(status) {
+    switch(status) {
+        case 'available':
+            return 'Tersedia';
+        case 'rented':
+            return 'Disewa';
+        case 'active':
+            return 'Aktif';
+        case 'returned':
+            return 'Dikembalikan';
+        default:
+            return status;
+    }
+}
+
 // Rental functions
-function loadRentals() {
+function loadRentals(sortKey = null, sortOrder = 'asc') {
     const tbody = document.getElementById('rentalsTableBody');
     tbody.innerHTML = '';
-    
-    rentals.forEach(rental => {
+
+    let sortedRentals = [...rentals];
+    if (sortKey) {
+        sortedRentals.sort((a, b) => {
+            let valA = a[sortKey];
+            let valB = b[sortKey];
+
+            // For itemName, compare item names
+            if (sortKey === 'itemName') {
+                const itemA = items.find(i => i.id === a.itemId);
+                const itemB = items.find(i => i.id === b.itemId);
+                valA = itemA ? itemA.name : '';
+                valB = itemB ? itemB.name : '';
+            }
+
+            if (typeof valA === 'string') valA = valA.toLowerCase();
+            if (typeof valB === 'string') valB = valB.toLowerCase();
+
+            if (valA < valB) return sortOrder === 'asc' ? -1 : 1;
+            if (valA > valB) return sortOrder === 'asc' ? 1 : -1;
+            return 0;
+        });
+    }
+
+    sortedRentals.forEach(rental => {
         const item = items.find(i => i.id === rental.itemId);
         const itemName = item ? item.name : 'Barang tidak ditemukan';
-        
+
         const row = document.createElement('tr');
         row.innerHTML = `
             <td>${rental.id}</td>
@@ -706,7 +916,7 @@ function loadRentals() {
             <td>Rp ${rental.totalCost.toLocaleString('id-ID')}</td>
             <td>${rental.startDate}</td>
             <td>${rental.duration}</td>
-            <td><span class="status-badge status-${rental.status}">${rental.status}</span></td>
+            <td><span class="status-badge status-${rental.status}">${translateStatus(rental.status)}</span></td>
             <td>
                 <button class="btn-edit" onclick="editRental(${rental.id})">Edit</button>
                 <button class="btn-delete" onclick="deleteRental(${rental.id})">Hapus</button>
@@ -715,7 +925,7 @@ function loadRentals() {
         `;
         tbody.appendChild(row);
     });
-    
+
     // Update item dropdown in rental form
     updateItemDropdown();
 }
@@ -1369,7 +1579,7 @@ function downloadInvoicePDF() {
 // Chart functions
 function updateCharts() {
     updateRevenueChart();
-    updateItemStatusChart();
+    updateRentalChart();
     updateCategoryChart();
 }
 
@@ -1403,24 +1613,36 @@ function updateRevenueChart() {
     `;
 }
 
-function updateItemStatusChart() {
-    const ctx = document.getElementById('itemStatusChart');
+function updateRentalChart() {
+    const ctx = document.getElementById('rentalChart');
     if (!ctx) return;
-    
+
+    // Group rentals by month
+     const monthlyRentals = {};
+    rentals.forEach(rental => {
+        const month = new Date(rental.startDate).toLocaleDateString('id-ID', { year: 'numeric', month: 'short' });
+        monthlyRentals[month] = (monthlyRentals[month] || 0) + 1;
+    });
+
+    const labels = Object.keys(monthlyRentals);
+    const data = Object.values(monthlyRentals);
+
+    // Simple chart implementation
     const available = items.filter(i => i.status === 'available').length;
     const rented = items.filter(i => i.status === 'rented').length;
     
     const chartContainer = ctx.parentElement;
     chartContainer.innerHTML = `
-        <h3>Status Barang</h3>
-        <div class="pie-chart">
-            <div class="pie-segment available" style="--percentage: ${(available / (available + rented)) * 100}%;">
-                Tersedia: ${available}
-            </div>
-            <div class="pie-segment rented" style="--percentage: ${(rented / (available + rented)) * 100}%;">
-                Disewa: ${rented}
-            </div>
-        </div>
+        <h3>Penyewaan Bulanan</h3>
+        <div class="simple-chart">
+            ${labels.length > 0 ? labels.map((label, index) => `
+                <div class="chart-bar">
+                    <div class="bar" style="height: ${data[index] > 0 ? (data[index] / Math.max(...data)) * 100 : 0}px; background: #f59e0b;"></div>
+                    <div class="label">${label}</div>
+                    <div class="value">${data[index]} penyewaan</div>
+                </div>
+            `).join('') : '<p>Tidak ada data penyewaan</p>'}
+         </div>
     `;
 }
 

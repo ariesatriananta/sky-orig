@@ -189,14 +189,14 @@
                 <table class="data-table">
                     <thead>
                         <tr>
-                            <th>ID</th>
-                            <th>Nama</th>
-                            <th>Kode</th>
-                            <th>Kategori</th>
-                            <th>Kondisi</th>
+                            <th onclick="toggleSort('id')" style="cursor:pointer;">ID</th>
+                            <th onclick="toggleSort('name')" style="cursor:pointer;">Nama</th>
+                            <th onclick="toggleSort('code')" style="cursor:pointer;">Kode</th>
+                            <th onclick="toggleSort('categoryName')" style="cursor:pointer;">Kategori</th>
+                            <th onclick="toggleSort('condition')" style="cursor:pointer;">Kondisi</th>
                             <th>Opsi Harga</th>
-                            <th>Lokasi</th>
-                            <th>Status</th>
+                            <th onclick="toggleSort('location')" style="cursor:pointer;">Lokasi</th>
+                            <th onclick="toggleSort('status')" style="cursor:pointer;">Status</th>
                             <th>Aksi</th>
                         </tr>
                     </thead>
@@ -221,15 +221,15 @@
                 <table class="data-table">
                     <thead>
                         <tr>
-                            <th>ID</th>
-                            <th>Pelanggan</th>
-                            <th>Telepon</th>
-                            <th>Barang</th>
-                            <th>Jenis Sewa</th>
-                            <th>Total Biaya</th>
-                            <th>Tanggal Mulai</th>
-                            <th>Durasi</th>
-                            <th>Status</th>
+                            <th onclick="toggleRentalSort('id')" style="cursor:pointer;">ID</th>
+                            <th onclick="toggleRentalSort('customerName')" style="cursor:pointer;">Pelanggan</th>
+                            <th onclick="toggleRentalSort('customerPhone')" style="cursor:pointer;">Telepon</th>
+                            <th onclick="toggleRentalSort('itemName')" style="cursor:pointer;">Barang</th>
+                            <th onclick="toggleRentalSort('pricingType')" style="cursor:pointer;">Jenis Sewa</th>
+                            <th onclick="toggleRentalSort('totalCost')" style="cursor:pointer;">Total Biaya</th>
+                            <th onclick="toggleRentalSort('startDate')" style="cursor:pointer;">Tanggal Mulai</th>
+                            <th onclick="toggleRentalSort('duration')" style="cursor:pointer;">Durasi</th>
+                            <th onclick="toggleRentalSort('status')" style="cursor:pointer;">Status</th>
                             <th>Aksi</th>
                         </tr>
                     </thead>
@@ -376,6 +376,9 @@
                 </div>
                 <div class="form-row">
                     <div class="form-group">
+                        <label for="itemImage">Foto Barang</label>
+                        <input type="file" id="itemImage" accept="image/*">
+                        <img id="itemImagePreview" alt="Pratinjau Gambar" style="display:none;margin-top:10px;width:100%;max-height:160px;object-fit:cover;border:2px solid #e1e5e9;border-radius:10px;" />
                     </div>
                     <div class="form-group">
                         <label for="itemLocation">Lokasi</label>
