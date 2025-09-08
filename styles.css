@@ -204,7 +204,7 @@ body {
     max-width: 1400px;
     margin: 0 auto;
     padding: 30px;
-    background: white;
+    background: rgba(255, 255, 255, 0.7); /* 30% transparent */
     min-height: calc(100vh - 140px);
 }
 
