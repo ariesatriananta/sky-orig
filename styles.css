@@ -759,16 +759,23 @@ body {
 }
 
 .report-card {
-    background: white;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     padding: 25px;
     border-radius: 15px;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.12);
+    color: #fff;
 }
 
 .report-card h3 {
     margin-bottom: 20px;
-    color: #333;
+    color: #fff;
     font-weight: 700;
+}
+
+/* Improve contrast for simple charts rendered inside report cards */
+.report-card .simple-chart .label,
+.report-card .simple-chart .value {
+    color: rgba(255,255,255,0.95);
 }
 
 /* Responsive Design */
