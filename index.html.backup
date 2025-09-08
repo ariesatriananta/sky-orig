@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Purchasing & Rent Department (by sky)</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Login Screen -->
+    <div id="loginScreen" class="login-screen">
+        <div class="login-container">
+            <div class="login-header">
+                <h1>Purchasing & Rent Department</h1>
+                <p class="login-subtitle">by sky</p>
+            </div>
+            <form id="loginForm" class="login-form">
+                <div class="form-group">
+                    <label for="username">Username</label>
+                    <input type="text" id="username" name="username" required>
+                </div>
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" name="password" required>
+                </div>
+                <button type="submit" class="login-btn">Login</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Main Application -->
+    <div id="mainApp" class="main-app hidden">
+        <!-- Navigation -->
+        <nav class="navbar">
+            <div class="nav-brand">
+                <h2>Purchasing & Rent Department</h2>
+                <span class="nav-subtitle">by sky</span>
+            </div>
+            <div class="nav-menu">
+                <button class="nav-item active" data-section="dashboard">Dashboard</button>
+                <button class="nav-item" data-section="items">Items</button>
+                <button class="nav-item" data-section="rentals">Rentals</button>
+                <button class="nav-item" data-section="returns">Returns</button>
+                <button class="nav-item" data-section="reports">Reports</button>
+                <button class="logout-btn" id="logoutBtn">Logout</button>
+            </div>
+            <div class="mobile-menu-toggle">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+        </nav>
+
+        <!-- Dashboard Section -->
+        <section id="dashboard" class="section active">
+            <div class="container">
+                <div class="section-header">
+                    <h2>Dashboard</h2>
+                    <button class="edit-btn" onclick="toggleEditMode('dashboard')">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                            <path d="m18.5 2.5 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                        </svg>
+                        Edit
+                    </button>
+                </div>
+
+                <!-- KPI Cards -->
+                <div class="kpi-grid">
+                    <div class="kpi-card">
+                        <div class="kpi-icon revenue">💰</div>
+                        <div class="kpi-content">
+                            <h3 id="totalRevenue">Rp 0</h3>
+                            <p>Total Revenue</p>
+                        </div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-icon active">🔄</div>
+                        <div class="kpi-content">
+                            <h3 id="activeRentals">0</h3>
+                            <p>Active Rentals</p>
+                        </div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-icon available">📦</div>
+                        <div class="kpi-content">
+                            <h3 id="availableItems">0</h3>
+                            <p>Available Items</p>
+                        </div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-icon categories">🏷️</div>
+                        <div class="kpi-content">
+                            <h3 id="totalCategories">0</h3>
+                            <p>Categories</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Categories Management -->
+                <div class="dashboard-section">
+                    <div class="section-header">
+                        <h3>Categories</h3>
+                        <button class="add-btn" onclick="showCategoryModal()">Add Category</button>
+                    </div>
+                    <div id="categoriesList" class="categories-grid"></div>
+                </div>
+
+                <!-- Popular Items -->
+                <div class="dashboard-section">
+                    <div class="section-header">
+                        <h3>Popular Items</h3>
+                    </div>
+                    <div class="table-container">
+                        <table id="popularItemsTable" class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Item</th>
+                                    <th>Category</th>
+                                    <th>Rental Count</th>
+                                    <th>Revenue</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Items Section -->
+        <section id="items" class="section">
+            <div class="container">
+                <div class="section-header">
+                    <h2>Items Management</h2>
+                    <button class="add-btn" onclick="showItemModal()">Add Item</button>
+                </div>
+                
+                <div class="filters">
+                    <input type="text" id="itemSearch" placeholder="Search items..." class="search-input">
+                    <select id="categoryFilter" class="filter-select">
+                        <option value="">All Categories</option>
+                    </select>
+                    <select id="conditionFilter" class="filter-select">
+                        <option value="">All Conditions</option>
+                        <option value="Sangat Baik">Sangat Baik</option>
+                        <option value="Baik">Baik</option>
+                        <option value="Cukup">Cukup</option>
+                        <option value="Rusak Sebagian">Rusak Sebagian</option>
+                        <option value="Rusak Total">Rusak Total</option>
+                    </select>
+                </div>
+
+                <div class="table-container">
+                    <table id="itemsTable" class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Image</th>
+                                <th>Name</th>
+                                <th>Category</th>
+                                <th>Condition</th>
+                                <th>Price/Day</th>
+                                <th>Location</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- Rentals Section -->
+        <section id="rentals" class="section">
+            <div class="container">
+                <div class="section-header">
+                    <h2>Rentals Management</h2>
+                    <button class="add-btn" onclick="showRentalModal()">New Rental</button>
+                </div>
+
+                <div class="filters">
+                    <input type="text" id="rentalSearch" placeholder="Search rentals..." class="search-input">
+                    <select id="statusFilter" class="filter-select">
+                        <option value="">All Status</option>
+                        <option value="Aktif">Active</option>
+                        <option value="Dikembalikan">Returned</option>
+                        <option value="Terlambat">Late</option>
+                    </select>
+                </div>
+
+                <div class="table-container">
+                    <table id="rentalsTable" class="data-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Customer</th>
+                                <th>Phone</th>
+                                <th>Item</th>
+                                <th>Start Date</th>
+                                <th>Duration</th>
+                                <th>Total Cost</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- Returns Section -->
+        <section id="returns" class="section">
+            <div class="container">
+                <div class="section-header">
+                    <h2>Returns Management</h2>
+                </div>
+
+                <div class="table-container">
+                    <table id="returnsTable" class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Rental ID</th>
+                                <th>Customer</th>
+                                <th>Item</th>
+                                <th>Return Date</th>
+                                <th>Condition</th>
+                                <th>Discount</th>
+                                <th>Final Cost</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- Reports Section -->
+        <section id="reports" class="section">
+            <div class="container">
+                <div class="section-header">
+                    <h2>Reports & Analytics</h2>
+                </div>
+
+                <div class="filters">
+                    <input type="date" id="startDate" class="date-input">
+                    <input type="date" id="endDate" class="date-input">
+                    <button class="filter-btn" onclick="generateReport()">Generate Report</button>
+                </div>
+
+                <div class="report-grid">
+                    <div class="report-card">
+                        <h3>Revenue Chart</h3>
+                        <canvas id="revenueChart" width="400" height="200"></canvas>
+                    </div>
+                    <div class="report-card">
+                        <h3>Rental Statistics</h3>
+                        <canvas id="rentalChart" width="400" height="200"></canvas>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- Modals -->
+    <!-- Category Modal -->
+    <div id="categoryModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="categoryModalTitle">Add Category</h3>
+                <span class="close" onclick="closeCategoryModal()">&times;</span>
+            </div>
+            <form id="categoryForm">
+                <div class="form-group">
+                    <label for="categoryName">Category Name</label>
+                    <input type="text" id="categoryName" required>
+                </div>
+                <div class="form-group">
+                    <label for="categoryDescription">Description</label>
+                    <textarea id="categoryDescription" rows="3"></textarea>
+                </div>
+                <div class="form-actions">
+                    <button type="button" onclick="closeCategoryModal()" class="cancel-btn">Cancel</button>
+                    <button type="submit" class="save-btn">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Item Modal -->
+    <div id="itemModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="itemModalTitle">Add Item</h3>
+                <span class="close" onclick="closeItemModal()">&times;</span>
+            </div>
+            <form id="itemForm">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="itemName">Item Name</label>
+                        <input type="text" id="itemName" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="itemCategory">Category</label>
+                        <select id="itemCategory" required></select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="itemDescription">Description</label>
+                    <textarea id="itemDescription" rows="3"></textarea>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="itemPrice">Price per Day (Rp)</label>
+                        <input type="number" id="itemPrice" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="itemCondition">Condition</label>
+                        <select id="itemCondition" required>
+                            <option value="Sangat Baik">Sangat Baik</option>
+                            <option value="Baik">Baik</option>
+                            <option value="Cukup">Cukup</option>
+                            <option value="Rusak Sebagian">Rusak Sebagian</option>
+                            <option value="Rusak Total">Rusak Total</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="itemLocation">Location</label>
+                        <input type="text" id="itemLocation" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="itemFeatures">Features</label>
+                        <input type="text" id="itemFeatures" placeholder="Separate with commas">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="itemImage">Image URL</label>
+                    <input type="url" id="itemImage" placeholder="https://example.com/image.jpg">
+                </div>
+                <div class="form-group">
+                    <label>Custom Pricing Packages</label>
+                    <div id="pricingPackages">
+                        <div class="pricing-package">
+                            <input type="text" placeholder="Package name (e.g., 3 days)" class="package-name">
+                            <input type="number" placeholder="Price" class="package-price">
+                            <button type="button" onclick="removePricingPackage(this)" class="remove-btn">Remove</button>
+                        </div>
+                    </div>
+                    <button type="button" onclick="addPricingPackage()" class="add-package-btn">Add Package</button>
+                </div>
+                <div class="form-actions">
+                    <button type="button" onclick="closeItemModal()" class="cancel-btn">Cancel</button>
+                    <button type="submit" class="save-btn">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Rental Modal -->
+    <div id="rentalModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="rentalModalTitle">New Rental</h3>
+                <span class="close" onclick="closeRentalModal()">&times;</span>
+            </div>
+            <form id="rentalForm">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="customerName">Customer Name</label>
+                        <input type="text" id="customerName" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="customerPhone">Phone Number</label>
+                        <input type="tel" id="customerPhone" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="rentalItem">Select Item</label>
+                    <select id="rentalItem" required></select>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="startDate">Start Date</label>
+                        <input type="date" id="startDate" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="duration">Duration (days)</label>
+                        <input type="number" id="duration" min="1" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="totalCost">Total Cost</label>
+                    <input type="number" id="totalCost" readonly>
+                </div>
+                <div class="form-actions">
+                    <button type="button" onclick="closeRentalModal()" class="cancel-btn">Cancel</button>
+                    <button type="submit" class="save-btn">Create Rental</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Return Modal -->
+    <div id="returnModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Process Return</h3>
+                <span class="close" onclick="closeReturnModal()">&times;</span>
+            </div>
+            <form id="returnForm">
+                <div class="form-group">
+                    <label for="returnCondition">Item Condition on Return</label>
+                    <select id="returnCondition" required>
+                        <option value="Sangat Baik">Sangat Baik</option>
+                        <option value="Baik">Baik</option>
+                        <option value="Cukup">Cukup</option>
+                        <option value="Rusak Sebagian">Rusak Sebagian</option>
+                        <option value="Rusak Total">Rusak Total</option>
+                    </select>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="discountPercent">Discount (%)</label>
+                        <input type="number" id="discountPercent" min="0" max="100" value="0">
+                    </div>
+                    <div class="form-group">
+                        <label for="discountReason">Discount Reason</label>
+                        <input type="text" id="discountReason" placeholder="Optional">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="finalCost">Final Cost</label>
+                    <input type="number" id="finalCost" readonly>
+                </div>
+                <div class="form-actions">
+                    <button type="button" onclick="closeReturnModal()" class="cancel-btn">Cancel</button>
+                    <button type="submit" class="save-btn">Process Return</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

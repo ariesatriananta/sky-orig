@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Departemen Pembelian & Sewa (by sky)</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Login Screen -->
+    <div id="loginScreen" class="login-screen">
+        <div class="login-container">
+            <div class="login-header">
+                <h1>Departemen Pembelian & Sewa</h1>
+                <p class="login-subtitle">by sky</p>
+            </div>
+            <form id="loginForm" class="login-form">
+                <div class="form-group">
+                    <label for="username">Nama Pengguna</label>
+                    <input type="text" id="username" name="username" required>
+                </div>
+                <div class="form-group">
+                    <label for="password">Kata Sandi</label>
+                    <input type="password" id="password" name="password" required>
+                </div>
+                <button type="submit" class="login-btn">Masuk</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Main Application -->
+    <div id="mainApp" class="main-app hidden">
+        <!-- Navigation -->
+        <nav class="navbar">
+            <div class="nav-brand">
+                <h2>Departemen Pembelian & Sewa</h2>
+                <span class="nav-subtitle">by sky</span>
+            </div>
+            <div class="nav-menu">
+                <button class="nav-item active" data-section="dashboard">Dashboard</button>
+                <button class="nav-item" data-section="items">Barang</button>
+                <button class="nav-item" data-section="rentals">Penyewaan</button>
+                <button class="nav-item" data-section="returns">Pengembalian</button>
+                <button class="nav-item" data-section="reports">Laporan</button>
+                <button class="logout-btn" id="logoutBtn">Keluar</button>
+            </div>
+            <div class="mobile-menu-toggle">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+        </nav>
+
+        <!-- Dashboard Section -->
+        <section id="dashboard" class="section active">
+            <div class="container">
+                <div class="section-header">
+                    <h2>Dashboard</h2>
+                    <button class="edit-btn" onclick="toggleEditMode('dashboard')">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                            <path d="m18.5 2.5 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                        </svg>
+                        Edit
+                    </button>
+                </div>
+
+                <!-- KPI Cards -->
+                <div class="kpi-grid">
+                    <div class="kpi-card">
+                        <div class="kpi-icon revenue">💰</div>
+                        <div class="kpi-content">
+                            <h3 id="totalRevenue">Rp 0</h3>
+                            <p>Total Pendapatan</p>
+                        </div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-icon active">🔄</div>
+                        <div class="kpi-content">
+                            <h3 id="activeRentals">0</h3>
+                            <p>Penyewaan Aktif</p>
+                        </div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-icon available">📦</div>
+                        <div class="kpi-content">
+                            <h3 id="availableItems">0</h3>
+                            <p>Barang Tersedia</p>
+                        </div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-icon categories">🏷️</div>
+                        <div class="kpi-content">
+                            <h3 id="totalCategories">0</h3>
+                            <p>Kategori</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Categories Management -->
+                <div class="dashboard-section">
+                    <div class="section-header">
+                        <h3>Kategori</h3>
+                        <button class="add-btn" onclick="showCategoryModal()">Tambah Kategori</button>
+                    </div>
+                    <div id="categoriesList" class="categories-grid"></div>
+                </div>
+
+                <!-- Popular Items -->
+                <div class="dashboard-section">
+                    <div class="section-header">
+                        <h3>Barang Populer</h3>
+                    </div>
+                    <div class="table-container">
+                        <table id="popularItemsTable" class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Barang</th>
+                                    <th>Kategori</th>
+                                    <th>Jumlah Sewa</th>
+                                    <th>Pendapatan</th>
+                                    <th>Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Items Section -->
+        <section id="items" class="section">
+            <div class="container">
+                <div class="section-header">
+                    <h2>Manajemen Barang</h2>
+                    <button class="add-btn" onclick="showItemModal()">Tambah Barang</button>
+                </div>
+                
+                <div class="filters">
+                    <input type="text" id="itemSearch" placeholder="Cari barang..." class="search-input">
+                    <select id="categoryFilter" class="filter-select">
+                        <option value="">Semua Kategori</option>
+                    </select>
+                    <select id="conditionFilter" class="filter-select">
+                        <option value="">Semua Kondisi</option>
+                        <option value="Sangat Baik">Sangat Baik</option>
+                        <option value="Baik">Baik</option>
+                        <option value="Cukup">Cukup</option>
+                        <option value="Rusak Sebagian">Rusak Sebagian</option>
+                        <option value="Rusak Total">Rusak Total</option>
+                    </select>
+                </div>
+
+                <div class="table-container">
+                    <table id="itemsTable" class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Gambar</th>
+                                <th>Nama</th>
+                                <th>Kode/Barcode</th>
+                                <th>Kategori</th>
+                                <th>Kondisi</th>
+                                <th>Tarif Dasar/Hari</th>
+                                <th>Lokasi</th>
+                                <th>Status</th>
+                                <th>Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- Rentals Section -->
+        <section id="rentals" class="section">
+            <div class="container">
+                <div class="section-header">
+                    <h2>Manajemen Penyewaan</h2>
+                    <button class="add-btn" onclick="showRentalModal()">Sewa Baru</button>
+                </div>
+
+                <div class="filters">
+                    <input type="text" id="rentalSearch" placeholder="Cari penyewaan..." class="search-input">
+                    <select id="statusFilter" class="filter-select">
+                        <option value="">Semua Status</option>
+                        <option value="Aktif">Aktif</option>
+                        <option value="Dikembalikan">Dikembalikan</option>
+                        <option value="Terlambat">Terlambat</option>
+                    </select>
+                </div>
+
+                <div class="table-container">
+                    <table id="rentalsTable" class="data-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Pelanggan</th>
+                                <th>Telepon</th>
+                                <th>Barang</th>
+                                <th>Tanggal Mulai</th>
+                                <th>Durasi</th>
+                                <th>Total Biaya</th>
+                                <th>Status</th>
+                                <th>Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- Returns Section -->
+        <section id="returns" class="section">
+            <div class="container">
+                <div class="section-header">
+                    <h2>Manajemen Pengembalian</h2>
+                    <div class="return-options">
+                        <button class="add-btn" onclick="showReturnModal()">Input Manual</button>
+                        <button class="scan-btn" onclick="startBarcodeScanner()">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M3 7V5a2 2 0 0 1 2-2h2"></path>
+                                <path d="M17 3h2a2 2 0 0 1 2 2v2"></path>
+                                <path d="M21 17v2a2 2 0 0 1-2 2h-2"></path>
+                                <path d="M7 21H5a2 2 0 0 1-2-2v-2"></path>
+                                <rect x="7" y="7" width="10" height="10" rx="1"></rect>
+                            </svg>
+                            Scan Barcode
+                        </button>
+                    </div>
+                </div>
+
+                <div class="table-container">
+                    <table id="returnsTable" class="data-table">
+                        <thead>
+                            <tr>
+                                <th>ID Sewa</th>
+                                <th>Pelanggan</th>
+                                <th>Barang</th>
+                                <th>Tanggal Kembali</th>
+                                <th>Kondisi</th>
+                                <th>Diskon</th>
+                                <th>Biaya Akhir</th>
+                                <th>Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- Reports Section -->
+        <section id="reports" class="section">
+            <div class="container">
+                <div class="section-header">
+                    <h2>Laporan & Analitik</h2>
+                </div>
+
+                <div class="filters">
+                    <input type="date" id="startDate" class="date-input">
+                    <input type="date" id="endDate" class="date-input">
+                    <button class="filter-btn" onclick="generateReport()">Buat Laporan</button>
+                </div>
+
+                <div class="report-grid">
+                    <div class="report-card">
+                        <h3>Grafik Pendapatan</h3>
+                        <canvas id="revenueChart" width="400" height="200"></canvas>
+                    </div>
+                    <div class="report-card">
+                        <h3>Statistik Penyewaan</h3>
+                        <canvas id="rentalChart" width="400" height="200"></canvas>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- Modals -->
+    <!-- Category Modal -->
+    <div id="categoryModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="categoryModalTitle">Tambah Kategori</h3>
+                <span class="close" onclick="closeCategoryModal()">&times;</span>
+            </div>
+            <form id="categoryForm">
+                <div class="form-group">
+                    <label for="categoryName">Nama Kategori</label>
+                    <input type="text" id="categoryName" required>
+                </div>
+                <div class="form-group">
+                    <label for="categoryDescription">Deskripsi</label>
+                    <textarea id="categoryDescription" rows="3"></textarea>
+                </div>
+                <div class="form-actions">
+                    <button type="button" onclick="closeCategoryModal()" class="cancel-btn">Batal</button>
+                    <button type="submit" class="save-btn">Simpan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Item Modal -->
+    <div id="itemModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="itemModalTitle">Tambah Barang</h3>
+                <span class="close" onclick="closeItemModal()">&times;</span>
+            </div>
+            <form id="itemForm">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="itemName">Nama Barang</label>
+                        <input type="text" id="itemName" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="itemCode">Kode/Barcode</label>
+                        <input type="text" id="itemCode" placeholder="Masukkan kode atau barcode" required>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="itemCategory">Kategori</label>
+                        <select id="itemCategory" required></select>
+                    </div>
+                    <div class="form-group">
+                        <label for="itemCondition">Kondisi</label>
+                        <select id="itemCondition" required>
+                            <option value="Sangat Baik">Sangat Baik</option>
+                            <option value="Baik">Baik</option>
+                            <option value="Cukup">Cukup</option>
+                            <option value="Rusak Sebagian">Rusak Sebagian</option>
+                            <option value="Rusak Total">Rusak Total</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="itemDescription">Deskripsi</label>
+                    <textarea id="itemDescription" rows="3"></textarea>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="itemBasePrice">Tarif Dasar per Hari (Rp)</label>
+                        <input type="number" id="itemBasePrice" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="itemLocation">Lokasi</label>
+                        <input type="text" id="itemLocation" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="itemFeatures">Fitur</label>
+                    <input type="text" id="itemFeatures" placeholder="Pisahkan dengan koma">
+                </div>
+                <div class="form-group">
+                    <label for="itemImage">URL Gambar</label>
+                    <input type="url" id="itemImage" placeholder="https://example.com/image.jpg">
+                </div>
+                
+                <!-- Custom Base Rates Section -->
+                <div class="form-group">
+                    <label>Tarif Dasar Kustom</label>
+                    <div id="customBaseRates">
+                        <div class="base-rate-item">
+                            <input type="text" placeholder="Nama tarif (misal: Tarif Weekend)" class="rate-name">
+                            <input type="number" placeholder="Tarif per hari" class="rate-price">
+                            <input type="text" placeholder="Kondisi (misal: Sabtu-Minggu)" class="rate-condition">
+                            <button type="button" onclick="removeBaseRate(this)" class="remove-btn">Hapus</button>
+                        </div>
+                    </div>
+                    <button type="button" onclick="addBaseRate()" class="add-package-btn">Tambah Tarif Dasar</button>
+                </div>
+
+                <!-- Custom Pricing Packages -->
+                <div class="form-group">
+                    <label>Paket Harga Kustom</label>
+                    <div id="pricingPackages">
+                        <div class="pricing-package">
+                            <input type="text" placeholder="Nama paket (misal: 3 hari)" class="package-name">
+                            <input type="number" placeholder="Harga" class="package-price">
+                            <button type="button" onclick="removePricingPackage(this)" class="remove-btn">Hapus</button>
+                        </div>
+                    </div>
+                    <button type="button" onclick="addPricingPackage()" class="add-package-btn">Tambah Paket</button>
+                </div>
+                <div class="form-actions">
+                    <button type="button" onclick="closeItemModal()" class="cancel-btn">Batal</button>
+                    <button type="submit" class="save-btn">Simpan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Rental Modal -->
+    <div id="rentalModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="rentalModalTitle">Sewa Baru</h3>
+                <span class="close" onclick="closeRentalModal()">&times;</span>
+            </div>
+            <form id="rentalForm">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="customerName">Nama Pelanggan</label>
+                        <input type="text" id="customerName" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="customerPhone">Nomor Telepon</label>
+                        <input type="tel" id="customerPhone" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="rentalItem">Pilih Barang</label>
+                    <select id="rentalItem" required></select>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="startDate">Tanggal Mulai</label>
+                        <input type="date" id="startDate" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="duration">Durasi (hari)</label>
+                        <input type="number" id="duration" min="1" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="selectedRate">Pilih Tarif</label>
+                    <select id="selectedRate">
+                        <option value="base">Tarif Dasar</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="totalCost">Total Biaya</label>
+                    <input type="number" id="totalCost" readonly>
+                </div>
+                <div class="form-actions">
+                    <button type="button" onclick="closeRentalModal()" class="cancel-btn">Batal</button>
+                    <button type="submit" class="save-btn">Buat Sewa</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Return Modal -->
+    <div id="returnModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Proses Pengembalian</h3>
+                <span class="close" onclick="closeReturnModal()">&times;</span>
+            </div>
+            <form id="returnForm">
+                <div class="form-group">
+                    <label for="returnItemCode">Kode/Barcode Barang</label>
+                    <div class="barcode-input-group">
+                        <input type="text" id="returnItemCode" placeholder="Masukkan kode atau scan barcode" required>
+                        <button type="button" class="scan-btn-small" onclick="scanBarcodeForReturn()">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M3 7V5a2 2 0 0 1 2-2h2"></path>
+                                <path d="M17 3h2a2 2 0 0 1 2 2v2"></path>
+                                <path d="M21 17v2a2 2 0 0 1-2 2h-2"></path>
+                                <path d="M7 21H5a2 2 0 0 1-2-2v-2"></path>
+                                <rect x="7" y="7" width="10" height="10" rx="1"></rect>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+                <div id="rentalInfo" class="rental-info hidden">
+                    <h4>Informasi Penyewaan</h4>
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <label>Pelanggan:</label>
+                            <span id="returnCustomerName"></span>
+                        </div>
+                        <div class="info-item">
+                            <label>Barang:</label>
+                            <span id="returnItemName"></span>
+                        </div>
+                        <div class="info-item">
+                            <label>Tanggal Mulai:</label>
+                            <span id="returnStartDate"></span>
+                        </div>
+                        <div class="info-item">
+                            <label>Durasi:</label>
+                            <span id="returnDuration"></span>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="returnCondition">Kondisi Barang saat Dikembalikan</label>
+                    <select id="returnCondition" required>
+                        <option value="Sangat Baik">Sangat Baik</option>
+                        <option value="Baik">Baik</option>
+                        <option value="Cukup">Cukup</option>
+                        <option value="Rusak Sebagian">Rusak Sebagian</option>
+                        <option value="Rusak Total">Rusak Total</option>
+                    </select>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="discountPercent">Diskon (%)</label>
+                        <input type="number" id="discountPercent" min="0" max="100" value="0">
+                    </div>
+                    <div class="form-group">
+                        <label for="discountReason">Alasan Diskon</label>
+                        <input type="text" id="discountReason" placeholder="Opsional">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="finalCost">Biaya Akhir</label>
+                    <input type="number" id="finalCost" readonly>
+                </div>
+                <div class="form-actions">
+                    <button type="button" onclick="closeReturnModal()" class="cancel-btn">Batal</button>
+                    <button type="submit" class="save-btn">Proses Pengembalian</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Barcode Scanner Modal -->
+    <div id="barcodeModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Scanner Barcode</h3>
+                <span class="close" onclick="closeBarcodeModal()">&times;</span>
+            </div>
+            <div class="scanner-container">
+                <div id="scanner" class="scanner-area">
+                    <div class="scanner-line"></div>
+                    <p>Arahkan kamera ke barcode</p>
+                </div>
+                <div class="scanner-controls">
+                    <button type="button" onclick="startCamera()" class="scan-btn">Mulai Kamera</button>
+                    <button type="button" onclick="stopCamera()" class="cancel-btn">Berhenti</button>
+                </div>
+                <div class="manual-input">
+                    <label for="manualBarcode">Atau masukkan kode manual:</label>
+                    <input type="text" id="manualBarcode" placeholder="Masukkan kode barcode">
+                    <button type="button" onclick="useManualBarcode()" class="save-btn">Gunakan Kode</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
