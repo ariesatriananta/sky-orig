@@ -3,9 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#5A67D8">
     <title>Sky Rent</title>
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="manifest" href="/manifest.webmanifest">
+    <link rel="icon" href="/favicon.ico" type="image/x-icon" sizes="16x16">
 </head>
 <body>
     <!-- Login Screen -->
@@ -586,5 +589,12 @@
     </div>
 
     <script src="script.js"></script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+            navigator.serviceWorker.register('/service-worker.js');
+            });
+        }
+    </script>
 </body>
 </html>
