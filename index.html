@@ -29,9 +29,6 @@
                     <input id="password" type="password" required />
                 </div>
                 <button type="submit" class="login-btn">Masuk</button>
-                <div style="margin-top:10px;text-align:center">
-                    <a href="#" onclick="event.preventDefault(); supaRegister();">Buat akun baru</a>
-                </div>
             </form>
         </div>
     </div>
@@ -88,7 +85,7 @@
             </div>
             
             <div class="kpi-grid">
-                <div class="kpi-card">
+                <div class="kpi-card" style="cursor: pointer;" onclick="showSection('reports')">
                     <div class="kpi-icon revenue">
                         <i class="fas fa-dollar-sign"></i>
                     </div>
@@ -98,7 +95,7 @@
                     </div>
                 </div>
                 
-                <div class="kpi-card">
+                <div class="kpi-card" style="cursor: pointer;" onclick="showSection('rentals')">
                     <div class="kpi-icon active">
                         <i class="fas fa-handshake"></i>
                     </div>
@@ -108,7 +105,7 @@
                     </div>
                 </div>
                 
-                <div class="kpi-card">
+                <div class="kpi-card"  style="cursor: pointer;" onclick="showSection('items')">
                     <div class="kpi-icon available">
                         <i class="fas fa-box"></i>
                     </div>
@@ -118,7 +115,7 @@
                     </div>
                 </div>
                 
-                <div class="kpi-card">
+                <div class="kpi-card" style="cursor: pointer;" onclick="showSection('categories')">
                     <div class="kpi-icon categories">
                         <i class="fas fa-tags"></i>
                     </div>
@@ -304,18 +301,9 @@
                         <input type="text" id="categoryName" required>
                     </div>
                     <div class="form-group">
-                        <label for="categoryIcon">Icon</label>
-                        <select id="categoryIcon" required>
-                            <option value="">Pilih Icon</option>
-                            <option value="💻">💻 Elektronik</option>
-                            <option value="🪑">🪑 Furniture</option>
-                            <option value="🔧">🔧 Alat</option>
-                            <option value="🚗">🚗 Kendaraan</option>
-                            <option value="📷">📷 Kamera</option>
-                            <option value="🎵">🎵 Audio</option>
-                            <option value="🏠">🏠 Rumah Tangga</option>
-                            <option value="⚽">⚽ Olahraga</option>
-                        </select>
+                        <label for="categoryIcon">Icon Kategori</label>
+                        <input type="file" id="categoryIcon" accept="image/*" required>
+                        <img id="categoryIconPreview" alt="Pratinjau Icon" style="display:none;margin-top:10px;width:50px;height:50px;object-fit:cover;border:2px solid #e1e5e9;border-radius:10px;" />
                     </div>
                 </div>
                 <div class="form-group">
@@ -467,7 +455,7 @@
                         <input type="number" id="duration" min="1" required>
                     </div>
                 </div>
-                <div class="form-row">
+                <!-- <div class="form-row">
                     <div class="form-group">
                         <label for="manualPrice">Harga Manual (Opsional)</label>
                         <input type="number" id="manualPrice" placeholder="Kosongkan jika menggunakan harga otomatis" oninput="calculateRentalCost()">
@@ -480,7 +468,7 @@
                         <label for="customPrice">Harga Manual (Opsional)</label>
                         <input type="number" id="customPrice" placeholder="Kosongkan untuk harga otomatis">
                     </div>
-                </div>
+                </div> -->
                 <div class="form-actions">
                     <button type="button" class="btn-secondary" onclick="closeModal('addRentalModal')">Batal</button>
                     <button type="submit" class="btn-primary">Simpan & Buat Invoice</button>
@@ -576,11 +564,11 @@
                 <!-- Invoice content will be generated here -->
             </div>
             <div class="form-actions">
-                <button type="button" class="btn-secondary" onclick="printInvoice()">
-                    <i class="fas fa-print"></i>
-                    Print
+                <button type="button" class="btn-secondary" onclick="shareInvoice()">
+                    <i class="fas fa-share"></i>
+                    Share
                 </button>
-                <button type="button" class="btn-primary" onclick="downloadInvoice()">
+                <button type="button" class="btn-primary" onclick="printInvoice()">
                     <i class="fas fa-download"></i>
                     Download PDF
                 </button>

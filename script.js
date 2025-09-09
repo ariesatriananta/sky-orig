@@ -4,6 +4,31 @@ const supabase = window.supabase.createClient(
   window.SUPABASE_ANON_KEY
 );
 
+// Ubah error Supabase jadi pesan yg ramah
+function supaErrorMessage(err) {
+    if (!err) return 'Terjadi kesalahan.';
+    const msg = String(err.message || '').toLowerCase();
+    const status = err.status;
+
+    if (status === 400 && msg.includes('invalid login')) return 'Email atau password salah.';
+    if (status === 401 && msg.includes('email not confirmed')) return 'Email kamu belum terverifikasi. Cek inbox.';
+    if (status === 422 || msg.includes('password')) return 'Password minimal 6 karakter.';
+    if (status === 429) return 'Terlalu banyak percobaan. Coba lagi nanti.';
+    if (msg.includes('network') || msg.includes('fetch')) return 'Gagal terhubung ke server. Cek koneksi internet.';
+
+    return err.message || 'Terjadi kesalahan.';
+    }
+
+    // notifier sederhana (pakai punyamu kalau sudah ada)
+    function notify(text, type = 'info') {
+    if (typeof showNotification === 'function') {
+        showNotification(text, type); // gunakan komponen notifikasi punyamu
+    } else {
+        alert(text);
+    }
+}
+
+
 // helper tampilkan UI utama
 function showMain() {
   document.getElementById("loginScreen").style.display = "none";
@@ -94,6 +119,26 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    // Preview image when selecting a file on Add/Edit Category form
+    const categoryIconInput = document.getElementById('categoryIcon');
+    const categoryIconPreview = document.getElementById('categoryIconPreview');
+    if (categoryIconInput && categoryIconPreview) {
+        categoryIconInput.addEventListener('change', function() {
+            const file = categoryIconInput.files && categoryIconInput.files[0];
+            if (!file) {
+                categoryIconPreview.src = '';
+                categoryIconPreview.style.display = 'none';
+                return;
+            }
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                categoryIconPreview.src = e.target.result;
+                categoryIconPreview.style.display = 'block';
+            };
+            reader.readAsDataURL(file);
+        });
+    }
+
     const addRentalForm = document.getElementById('addRentalForm');
     if (addRentalForm) {
         addRentalForm.addEventListener('submit', function(event) {
@@ -144,30 +189,36 @@ async function supaLogin() {
     const email = document.getElementById('email').value.trim();
     const password = document.getElementById('password').value;
 
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) {
-        showNotification(error.message || 'Gagal login', 'error');
-        return;
+    const btn = document.querySelector('.login-btn');
+    if (btn) { btn.disabled = true; btn.textContent = 'Masuk...'; }
+
+    try {
+        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) throw error; // lempar biar masuk catch
+        // sukses
+        currentUser = { id: data.user.id, email: data.user.email };
+        localStorage.setItem('currentUser', JSON.stringify(currentUser));
+        notify('Login berhasil', 'success');
+        showMain();
+    } catch (err) {
+        notify(supaErrorMessage(err), 'error');
+    } finally {
+        if (btn) { btn.disabled = false; btn.textContent = 'Masuk'; }
     }
-    currentUser = { id: data.user.id, email: data.user.email };
-    localStorage.setItem("currentUser", JSON.stringify(currentUser));
-    showMain();
 }
+
 
 // FUNGSI BARU: sign up
 async function supaRegister() {
-    const email = prompt('Email untuk daftar:');
-    if (!email) return;
-    const password = prompt('Password (min 6 char):');
-    if (!password) return;
-
-    const { data, error } = await supabase.auth.signUp({ email, password });
-    if (error) {
-        showNotification(error.message || 'Gagal daftar', 'error');
-        return;
+    const email = prompt('Email untuk daftar:'); if (!email) return;
+    const password = prompt('Password (min 6 karakter):'); if (!password) return;
+    try {
+        const { data, error } = await supabase.auth.signUp({ email, password });
+        if (error) throw error;
+        notify('Registrasi berhasil. Jika verifikasi email ON, cek inbox.', 'success');
+    } catch (err) {
+        notify(supaErrorMessage(err), 'error');
     }
-    // Jika Confirm Email ON, user perlu verifikasi email dulu.
-    showNotification('Registrasi berhasil. Cek email untuk verifikasi (jika diaktifkan).', 'success');
 }
 
 function showLogin() {
@@ -193,11 +244,18 @@ function login() {
 }
 
 async function logout() {
-    await supabase.auth.signOut();
-    localStorage.removeItem('currentUser');
-    currentUser = null;
-    showLogin();
+    try {
+        const { error } = await supabase.auth.signOut();
+        if (error) throw error;
+    } catch (err) {
+        notify(supaErrorMessage(err), 'error');
+    } finally {
+        localStorage.removeItem('currentUser');
+        currentUser = null;
+        showLogin();
+    }
 }
+
 
 // Navigation functions
 function showSection(sectionId, event) {
@@ -386,15 +444,24 @@ function showDashboardDetail(type) {
 function loadCategories() {
     const tbody = document.getElementById('categoriesTableBody');
     tbody.innerHTML = '';
-    
+
     categories.forEach(category => {
         // Hitung jumlah barang dalam kategori ini
         const itemCount = items.filter(item => item.categoryId === category.id).length;
         category.itemCount = itemCount;
 
+        // Display icon as image or fallback to emoji if it's an old emoji
+        let iconDisplay = '';
+        if (category.icon && category.icon.startsWith('data:image')) {
+            iconDisplay = `<img src="${category.icon}" alt="Icon" style="width: 30px; height: 30px; object-fit: cover; border-radius: 4px;">`;
+        } else {
+            // Fallback for old emoji icons
+            iconDisplay = category.icon || '📦';
+        }
+
         const row = document.createElement('tr');
         row.innerHTML = `
-            <td>${category.icon}</td>
+            <td>${iconDisplay}</td>
             <td class="editable-name" data-id="${category.id}">${category.name}</td>
             <td class="editable-desc" data-id="${category.id}">${category.description}</td>
             <td>${category.itemCount}</td>
@@ -406,7 +473,7 @@ function loadCategories() {
         tbody.appendChild(row);
     });
 
-    
+
     // Add inline editing
     document.querySelectorAll('.editable-name, .editable-desc').forEach(cell => {
         cell.addEventListener('dblclick', function() {
@@ -456,6 +523,14 @@ function showAddCategoryModal() {
     document.getElementById('categoryModalTitle').textContent = 'Tambah Kategori Baru';
     document.getElementById('addCategoryForm').reset();
     document.getElementById('categoryId').value = '';
+
+    // Reset icon preview
+    const categoryIconPreview = document.getElementById('categoryIconPreview');
+    if (categoryIconPreview) {
+        categoryIconPreview.src = '';
+        categoryIconPreview.style.display = 'none';
+    }
+
     document.getElementById('addCategoryModal').style.display = 'block';
 }
 
@@ -465,23 +540,50 @@ function editCategory(id) {
         document.getElementById('categoryModalTitle').textContent = 'Edit Kategori';
         document.getElementById('categoryId').value = category.id;
         document.getElementById('categoryName').value = category.name;
-        document.getElementById('categoryIcon').value = category.icon;
+        // Clear file input (cannot set file input value programmatically for security)
+        const categoryIconInput = document.getElementById('categoryIcon');
+        if (categoryIconInput) {
+            categoryIconInput.value = '';
+        }
         document.getElementById('categoryDescription').value = category.description;
+
+        // Show existing icon preview
+        const categoryIconPreview = document.getElementById('categoryIconPreview');
+        if (category.icon && categoryIconPreview) {
+            categoryIconPreview.src = category.icon;
+            categoryIconPreview.style.display = 'block';
+        }
+
         document.getElementById('addCategoryModal').style.display = 'block';
     }
 }
 
-function saveCategory() {
+async function saveCategory() {
     const categoryId = document.getElementById('categoryId').value;
     const categoryName = document.getElementById('categoryName').value.trim();
-    const categoryIcon = document.getElementById('categoryIcon').value;
+    const categoryIconInput = document.getElementById('categoryIcon');
     const categoryDescription = document.getElementById('categoryDescription').value.trim();
-    
-    if (!categoryName || !categoryIcon) {
-        showNotification('Nama kategori dan icon harus diisi!', 'error');
+
+    if (!categoryName) {
+        showNotification('Nama kategori harus diisi!', 'error');
         return;
     }
-    
+
+    // Read image file as base64
+    let categoryIcon = null;
+    if (categoryIconInput.files && categoryIconInput.files[0]) {
+        categoryIcon = await readFileAsDataURL(categoryIconInput.files[0]);
+    } else if (categoryId) {
+        // For edit, keep existing icon if no new file selected
+        const existingCategory = categories.find(c => c.id === parseInt(categoryId));
+        categoryIcon = existingCategory ? existingCategory.icon : null;
+    }
+
+    if (!categoryIcon) {
+        showNotification('Icon kategori harus dipilih!', 'error');
+        return;
+    }
+
     if (categoryId) {
         // Edit existing category
         const category = categories.find(c => c.id === parseInt(categoryId));
@@ -505,7 +607,7 @@ function saveCategory() {
         categories.push(newCategory);
         showNotification('Kategori berhasil ditambahkan!', 'success');
     }
-    
+
     localStorage.setItem('rentalCategories', JSON.stringify(categories));
     loadCategories();
     loadItems(); // Refresh items to update category dropdown
@@ -693,7 +795,14 @@ function updateCategoryDropdown() {
         categories.forEach(category => {
             const option = document.createElement('option');
             option.value = category.id;
-            option.textContent = `${category.icon} ${category.name}`;
+            // Display icon as emoji or image name for dropdown
+            let iconText = '';
+            if (category.icon && category.icon.startsWith('data:image')) {
+                iconText = '🖼️'; // Image icon for uploaded images
+            } else {
+                iconText = category.icon || '📦';
+            }
+            option.textContent = `${iconText} ${category.name}`;
             categorySelect.appendChild(option);
         });
     }
@@ -1519,38 +1628,62 @@ function searchRentalByBarcode() {
 function showInvoice(rentalId) {
     const rental = rentals.find(r => r.id === rentalId);
     if (!rental) return;
-    
+
     const item = items.find(i => i.id === rental.itemId);
     const invoiceContent = `
-        <div class="invoice-header">
-            <h2>INVOICE PENYEWAAN</h2>
-            <p>No. Invoice: INV-${rental.id}</p>
-            <p>Tanggal: ${new Date().toLocaleDateString('id-ID')}</p>
-        </div>
-        
-        <div class="invoice-details">
-            <div class="customer-info">
-                <h3>Informasi Pelanggan</h3>
+        <div style="font-family: Arial, sans-serif; color: #333;">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #4f46e5; padding-bottom: 10px; margin-bottom: 20px;">
+                <h2 style="margin: 0; color: #4f46e5;">INVOICE PENYEWAAN</h2>
+                <div style="text-align: right; font-size: 0.9em; color: #555;">
+                    <div><strong>No. Invoice:</strong> INV-${rental.id}</div>
+                    <div><strong>Tanggal:</strong> ${new Date().toLocaleDateString('id-ID')}</div>
+                </div>
+            </div>
+
+            <div style="background: #f9fafb; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                <h3 style="margin-top: 0; color: #222;">Informasi Pelanggan</h3>
                 <p><strong>Nama:</strong> ${rental.customerName}</p>
                 <p><strong>Telepon:</strong> ${rental.customerPhone}</p>
             </div>
-            
-            <div class="rental-info">
-                <h3>Detail Penyewaan</h3>
-                <p><strong>Barang:</strong> ${rental.itemName}</p>
-                <p><strong>Kode:</strong> ${item ? item.code : '-'}</p>
-                <p><strong>Jenis Sewa:</strong> ${rental.pricingType}</p>
-                <p><strong>Tanggal Mulai:</strong> ${rental.startDate}</p>
-                <p><strong>Durasi:</strong> ${rental.duration}</p>
-                <p><strong>Total Biaya:</strong> Rp ${rental.totalCost.toLocaleString('id-ID')}</p>
+
+            <div style="background: #f9fafb; padding: 15px; border-radius: 8px;">
+                <h3 style="margin-top: 0; color: #222;">Detail Penyewaan</h3>
+                <table style="width: 100%; border-collapse: collapse;">
+                    <tbody>
+                        <tr>
+                            <td style="padding: 8px; border-bottom: 1px solid #ddd;"><strong>Barang</strong></td>
+                            <td style="padding: 8px; border-bottom: 1px solid #ddd;">${rental.itemName}</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 8px; border-bottom: 1px solid #ddd;"><strong>Kode</strong></td>
+                            <td style="padding: 8px; border-bottom: 1px solid #ddd;">${item ? item.code : '-'}</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 8px; border-bottom: 1px solid #ddd;"><strong>Jenis Sewa</strong></td>
+                            <td style="padding: 8px; border-bottom: 1px solid #ddd;">${rental.pricingType}</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 8px; border-bottom: 1px solid #ddd;"><strong>Tanggal Mulai</strong></td>
+                            <td style="padding: 8px; border-bottom: 1px solid #ddd;">${rental.startDate}</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 8px; border-bottom: 1px solid #ddd;"><strong>Durasi</strong></td>
+                            <td style="padding: 8px; border-bottom: 1px solid #ddd;">${rental.duration}</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 8px;"><strong>Total Biaya</strong></td>
+                            <td style="padding: 8px;">Rp ${rental.totalCost.toLocaleString('id-ID')}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div style="margin-top: 30px; font-size: 0.9em; color: #555; border-top: 1px solid #ddd; padding-top: 15px;">
+                Terima kasih atas kepercayaan Anda!
             </div>
         </div>
-        
-        <div class="invoice-footer">
-            <p>Terima kasih atas kepercayaan Anda!</p>
-        </div>
     `;
-    
+
     document.getElementById('invoiceContent').innerHTML = invoiceContent;
     document.getElementById('invoiceModal').style.display = 'block';
 }
