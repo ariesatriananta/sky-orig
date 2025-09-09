@@ -34,3 +34,18 @@ logs/
 vendor/
 composer.lock
 
+# Android/TWA
+.gradle/
+gradle/
+build/
+app/
+gradlew
+gradlew.bat
+local.properties
+settings.gradle
+build.gradle
+twa-manifest.json
+manifest-checksum.txt
+server.log
+*.jks
+*.keystore

@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.skyorig.app",
+      "sha256_cert_fingerprints": [
+        "11:DB:95:7B:C0:7C:67:88:BC:B6:87:D4:93:57:01:3D:63:6A:8E:03:71:F2:AD:F6:67:94:E0:BA:A3:81:39:FE"
+      ]
+    }
+  }
+]
