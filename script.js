@@ -1,3 +1,18 @@
+// === Supabase init ===
+const supabase = window.supabase.createClient(
+  window.SUPABASE_URL,
+  window.SUPABASE_ANON_KEY
+);
+
+// helper tampilkan UI utama
+function showMain() {
+  document.getElementById("loginScreen").style.display = "none";
+  document.getElementById("mainApp").style.display = "block";
+  loadAllData();
+  const activeSection = localStorage.getItem('activeSection') || 'dashboard';
+  showSection(activeSection);
+}
+
 // Consolidated auto-login logic
 function performAutoLogin() {
     const urlParams = new URLSearchParams(window.location.search);
@@ -35,19 +50,7 @@ function loadAllData() {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
-    // Check for auto-login
-    if (performAutoLogin()) {
-        setTimeout(() => {
-            document.getElementById("loginScreen").style.display = "none";
-            document.getElementById("mainApp").style.display = "block";
-            loadAllData();
-            // Load last active section or default to dashboard
-            const activeSection = localStorage.getItem('activeSection') || 'dashboard';
-            showSection(activeSection);
-        }, 100);
-        return;
-    }
-
+    
     checkAuth();
     loadAllData();
     // Load last active section or default to dashboard
@@ -114,32 +117,57 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // Authentication functions
-function checkAuth() {
-    const urlParams = new URLSearchParams(window.location.search);
-    const username = urlParams.get("username");
-    const password = urlParams.get("password");
-
-    if (username === "admin" && password === "admin123") {
-        currentUser = { username: "admin", role: "admin" };
+async function checkAuth() {
+    // Cek session Supabase
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session?.user) {
+        currentUser = { id: session.user.id, email: session.user.email };
+        // Simpan ringan saja agar kode lain tetap jalan
         localStorage.setItem("currentUser", JSON.stringify(currentUser));
-        document.getElementById("loginScreen").style.display = "none";
-        document.getElementById("mainApp").style.display = "block";
-        loadAllData();
-        const activeSection = localStorage.getItem('activeSection') || 'dashboard';
-        showSection(activeSection);
+        showMain();
+    } else {
+        // listen perubahan auth (mis. setelah login)
+        supabase.auth.onAuthStateChange((_event, sess) => {
+        if (sess?.user) {
+            currentUser = { id: sess.user.id, email: sess.user.email };
+            localStorage.setItem("currentUser", JSON.stringify(currentUser));
+            showMain();
+        } else {
+            showLogin();
+        }
+        });
+        showLogin();
+    }
+}
+
+async function supaLogin() {
+    const email = document.getElementById('email').value.trim();
+    const password = document.getElementById('password').value;
+
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) {
+        showNotification(error.message || 'Gagal login', 'error');
         return;
     }
+    currentUser = { id: data.user.id, email: data.user.email };
+    localStorage.setItem("currentUser", JSON.stringify(currentUser));
+    showMain();
+}
 
-    currentUser = JSON.parse(localStorage.getItem("currentUser"));
-    if (!currentUser) {
-        showLogin();
-    } else {
-        document.getElementById("loginScreen").style.display = "none";
-        document.getElementById("mainApp").style.display = "block";
-        loadAllData();
-        const activeSection = localStorage.getItem('activeSection') || 'dashboard';
-        showSection(activeSection);
+// FUNGSI BARU: sign up
+async function supaRegister() {
+    const email = prompt('Email untuk daftar:');
+    if (!email) return;
+    const password = prompt('Password (min 6 char):');
+    if (!password) return;
+
+    const { data, error } = await supabase.auth.signUp({ email, password });
+    if (error) {
+        showNotification(error.message || 'Gagal daftar', 'error');
+        return;
     }
+    // Jika Confirm Email ON, user perlu verifikasi email dulu.
+    showNotification('Registrasi berhasil. Cek email untuk verifikasi (jika diaktifkan).', 'success');
 }
 
 function showLogin() {
@@ -164,7 +192,8 @@ function login() {
     }
 }
 
-function logout() {
+async function logout() {
+    await supabase.auth.signOut();
     localStorage.removeItem('currentUser');
     currentUser = null;
     showLogin();

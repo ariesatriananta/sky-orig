@@ -19,19 +19,19 @@
                 <h2>Sky Rent</h2>
                 <p>Masuk ke akun Anda</p>
             </div>
-            <form onsubmit="event.preventDefault(); login();">
+            <form onsubmit="event.preventDefault(); supaLogin();">
                 <div class="form-group">
-                    <label for="username">Username</label>
-                    <input type="text" id="username" value="admin" required>
+                    <label for="email">Email</label>
+                    <input id="email" type="email" required />
                 </div>
                 <div class="form-group">
                     <label for="password">Password</label>
-                    <input type="password" id="password" value="admin123" required>
+                    <input id="password" type="password" required />
                 </div>
-                <button type="submit" class="login-btn">
-                    <i class="fas fa-sign-in-alt"></i>
-                    Masuk
-                </button>
+                <button type="submit" class="login-btn">Masuk</button>
+                <div style="margin-top:10px;text-align:center">
+                    <a href="#" onclick="event.preventDefault(); supaRegister();">Buat akun baru</a>
+                </div>
             </form>
         </div>
     </div>
@@ -588,6 +588,11 @@
         </div>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        window.SUPABASE_URL = "https://cdytvkyjhnbjquueluvr.supabase.co";
+        window.SUPABASE_ANON_KEY = "PASTE_ANON_PUBLIC_KEY_DI_SINI";
+    </script>
     <script src="script.js"></script>
     <script>
         if ('serviceWorker' in navigator) {

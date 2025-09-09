@@ -49,3 +49,5 @@ manifest-checksum.txt
 server.log
 *.jks
 *.keystore
+signing.properties
+gradle.properties
